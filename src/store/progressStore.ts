@@ -34,6 +34,7 @@ interface ProgressStore {
   checkHeartRefill: (profileId: string) => void
   updateStreak: (profileId: string) => void
   initProfile: (profileId: string) => void
+  applyPlacementLevel: (profileId: string, level: number) => void
 }
 
 export const useProgressStore = create<ProgressStore>()(
@@ -166,6 +167,38 @@ export const useProgressStore = create<ProgressStore>()(
             data: { ...s.data, [profileId]: defaultProgress(profileId) },
           }))
         }
+      },
+
+      applyPlacementLevel(profileId, level) {
+        get().initProfile(profileId)
+        if (level === 0) return // beginner: only lesson 1 unlocked by default
+
+        const maxLesson = level === 1 ? 5 : 10
+        const progress = get().getProgress(profileId)
+        const newLessons = { ...progress.lessons }
+        const now = Date.now()
+
+        for (let lessonId = 1; lessonId <= maxLesson; lessonId++) {
+          if (!newLessons[lessonId]) {
+            newLessons[lessonId] = {
+              lessonId,
+              stars: 1,
+              bestXP: 20,
+              completedAt: now,
+              attempts: 1,
+            }
+          }
+        }
+
+        set((s) => ({
+          data: {
+            ...s.data,
+            [profileId]: {
+              ...progress,
+              lessons: newLessons,
+            },
+          },
+        }))
       },
     }),
     { name: 'noor_progress' }

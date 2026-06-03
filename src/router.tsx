@@ -3,11 +3,16 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { HomePage } from '@/pages/HomePage'
 import { LessonPage } from '@/pages/LessonPage'
+import { OnboardingPage } from '@/pages/OnboardingPage'
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <ProfilePage />,
+  },
+  {
+    path: '/onboarding/:profileId',
+    element: <OnboardingPage />,
   },
   {
     path: '/home',

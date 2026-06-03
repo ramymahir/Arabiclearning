@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useProfileStore } from '@/store/profileStore'
 import { useProgressStore } from '@/store/progressStore'
+import { useOnboardingStore } from '@/store/onboardingStore'
 import { ProfileCard } from '@/components/profile/ProfileCard'
 import { NewProfileForm } from '@/components/profile/NewProfileForm'
 import { Button } from '@/components/ui/Button'
@@ -37,6 +38,7 @@ export function ProfilePage() {
     }, 50)
   }
   const { getProgress, initProfile } = useProgressStore()
+  const { hasCompleted } = useOnboardingStore()
   const [showForm, setShowForm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
@@ -44,12 +46,19 @@ export function ProfilePage() {
     audioManager.init()
     setActiveProfile(id)
     initProfile(id)
-    navigate('/home')
+    if (!hasCompleted(id)) {
+      navigate(`/onboarding/${id}`)
+    } else {
+      navigate('/home')
+    }
   }
 
   const handleAdd = (name: string, avatar: number) => {
     const id = addProfile(name, avatar)
-    handleSelect(id)
+    audioManager.init()
+    setActiveProfile(id)
+    initProfile(id)
+    navigate(`/onboarding/${id}`)
   }
 
   const handleDeleteConfirm = () => {
