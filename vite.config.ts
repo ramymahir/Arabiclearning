@@ -11,11 +11,15 @@ export default defineConfig({
     },
   },
   server: {
-    // Proxy /api/* to Vercel dev server when running `vercel dev` alongside `npm run dev`
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', () => {
+            // dev-server.mjs not running — frontend will fall back to browser TTS / built-in messages
+          })
+        },
       },
     },
   },
