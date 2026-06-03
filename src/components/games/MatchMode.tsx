@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import type { LessonExercise, AnswerResult, Harakah } from '@/types'
 import { getLetterById, getLettersByIds } from '@/data/letters'
-import { ArabicText } from '@/components/ui/ArabicText'
 import { AnswerFeedback } from './AnswerFeedback'
 import { useAudio } from '@/hooks/useAudio'
 import { shuffle } from '@/utils/shuffle'
@@ -16,21 +15,31 @@ interface Props {
   onContinue: () => void
 }
 
+const WORD_CARD_COLORS = [
+  'bg-amber-50 border-amber-200 hover:border-amber-400',
+  'bg-sky-50 border-sky-200 hover:border-sky-400',
+  'bg-violet-50 border-violet-200 hover:border-violet-400',
+  'bg-emerald-50 border-emerald-200 hover:border-emerald-400',
+]
+
 export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }: Props) {
   const { playLetter, playWord, playSFX } = useAudio()
   const [result, setResult] = useState<AnswerResult>('pending')
   const [selected, setSelected] = useState<string | null>(null)
 
   const correctLetter = getLetterById(exercise.correctAnswer)!
-  const allOptionIds = shuffle([exercise.correctAnswer, ...exercise.distractors.slice(0, 3)])
+  const [allOptionIds] = useState(() =>
+    shuffle([exercise.correctAnswer, ...exercise.distractors.slice(0, 3)])
+  )
   const optionLetters = getLettersByIds(allOptionIds)
 
-  // Word options: each distractor letter's first example word, plus correct letter's example
-  const wordOptions = shuffle(
-    optionLetters.map((l) => ({
-      letterId: l.id,
-      word: l.examples[0],
-    }))
+  const [wordOptions] = useState(() =>
+    shuffle(
+      optionLetters.map((l) => ({
+        letterId: l.id,
+        word: l.examples[0],
+      }))
+    )
   )
 
   useEffect(() => {
@@ -54,27 +63,29 @@ export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }:
   }
 
   return (
-    <div className="flex flex-col items-center px-4 pt-4 pb-36">
-      <div className="text-center font-bold text-gray-600 text-lg mb-4">
+    <div className="max-w-sm mx-auto flex flex-col items-center px-4 pt-4 pb-36 gap-6">
+      <div className="text-center font-bold text-gray-600 text-xl">
         Match the letter to its word!
       </div>
 
-      {/* Letter prompt card */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: [0, 1.2, 1], opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-40 h-40 rounded-3xl bg-white border-4 border-primary shadow-xl flex flex-col items-center justify-center mb-8 cursor-pointer"
+      {/* Letter prompt card — violet gradient */}
+      <motion.button
+        initial={{ scale: 0, rotate: -10 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => playLetter(correctLetter)}
+        className="w-44 h-44 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 shadow-xl flex flex-col items-center justify-center"
       >
-        <ArabicText size="7xl" className="text-gray-800 leading-none">
+        <span className="text-6xl font-arabic text-white leading-none" dir="rtl">
           {applyHarakah(correctLetter.arabic, harakah)}
-        </ArabicText>
-        <span className="text-sky text-xl mt-1">🔊</span>
-      </motion.div>
+        </span>
+        <span className="text-white/80 text-lg mt-2">🔊 Tap to hear</span>
+      </motion.button>
 
       {/* Word option cards */}
-      <div className="grid grid-cols-2 gap-3 w-full max-w-xs">
+      <div className="grid grid-cols-2 gap-3 w-full">
         {wordOptions.map(({ letterId, word }, i) => {
           const isCorrect = letterId === exercise.correctAnswer
           const isSelected = selected === letterId
@@ -82,28 +93,39 @@ export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }:
           const showWrong = isSelected && result === 'wrong'
           const revealCorrect = !isSelected && isCorrect && result === 'wrong'
 
+          let cardClass = WORD_CARD_COLORS[i % WORD_CARD_COLORS.length]
+          if (showCorrect || revealCorrect) cardClass = 'bg-emerald-400 border-emerald-500'
+          if (showWrong) cardClass = 'bg-rose-400 border-rose-500'
+          if (!isSelected && result !== 'pending' && !revealCorrect) cardClass = `${WORD_CARD_COLORS[i % WORD_CARD_COLORS.length]} opacity-50`
+
           return (
             <motion.button
               key={letterId}
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: showCorrect ? [1, 1.12, 1] : 1,
+                x: showWrong ? [0, -8, 8, -6, 6, 0] : 0,
+              }}
               transition={{ delay: i * 0.08 }}
               onClick={() => handleSelect(letterId)}
               whileTap={result === 'pending' ? { scale: 0.95 } : {}}
               className={`
-                rounded-2xl p-4 flex flex-col items-center gap-2 border-2 border-b-4 transition-all
-                ${showCorrect ? 'border-correct bg-correct/10' : ''}
-                ${showWrong ? 'border-wrong bg-wrong/10' : ''}
-                ${revealCorrect ? 'border-correct/50 bg-correct/5' : ''}
-                ${!isSelected && result === 'pending' ? 'border-border bg-white hover:border-gray-300 cursor-pointer' : ''}
-                ${!isSelected && result !== 'pending' && !revealCorrect ? 'border-border bg-white opacity-50' : ''}
+                rounded-2xl p-4 flex flex-col items-center gap-2 border-2 transition-all
+                ${cardClass}
+                ${result === 'pending' ? 'cursor-pointer' : 'cursor-default'}
               `}
             >
-              <span className="text-4xl">{word.emoji}</span>
-              <ArabicText size="xl">{word.arabic}</ArabicText>
-              <span className="text-xs text-gray-500">{word.meaning}</span>
-              {showCorrect && <span>✅</span>}
-              {showWrong && <span>❌</span>}
+              <span className="text-5xl">{word.emoji}</span>
+              <span className={`text-2xl font-arabic ${showCorrect || revealCorrect || showWrong ? 'text-white' : 'text-gray-800'}`} dir="rtl">
+                {word.arabic}
+              </span>
+              <span className={`text-sm ${showCorrect || revealCorrect || showWrong ? 'text-white/80' : 'text-gray-500'}`}>
+                {word.meaning}
+              </span>
+              {showCorrect && <span className="text-xl">✅</span>}
+              {showWrong && <span className="text-xl">❌</span>}
             </motion.button>
           )
         })}

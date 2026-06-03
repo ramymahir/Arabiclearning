@@ -18,6 +18,8 @@ interface Props {
   onContinue: () => void
 }
 
+const BAR_HEIGHTS = [40, 65, 90, 65, 40]
+
 export function SpeakMode({
   letter,
   harakah,
@@ -69,7 +71,6 @@ export function SpeakMode({
     const currentAttempts = attempts + 1
     setAttempts(currentAttempts)
 
-    // Simple heuristic: correct if transcript contains the letter character
     const isCorrect =
       transcript.includes(letter.arabic) ||
       transcript.toLowerCase().includes(letter.transliteration.toLowerCase().replace('-', ''))
@@ -90,14 +91,12 @@ export function SpeakMode({
     setPhase('feedback')
   }, [attempts, letter, profileId, transcript, weakLetters, sessionWrongCount, recordSpeakAttempt, stop])
 
-  // Auto-evaluate when countdown hits 0 or mic stops
   useEffect(() => {
     if (phase === 'listening' && countdown === 0) handleEvaluate()
   }, [countdown, phase, handleEvaluate])
 
   useEffect(() => {
     if (phase === 'listening' && !listening && !evaluatedRef.current) {
-      // Small delay so transcript state has time to update
       const t = setTimeout(() => handleEvaluate(), 200)
       return () => clearTimeout(t)
     }
@@ -119,48 +118,55 @@ export function SpeakMode({
   }
 
   return (
-    <div className="flex flex-col items-center px-4 py-8 min-h-[calc(100vh-80px)]">
-      {/* Instructions */}
-      <p className="text-gray-500 text-sm mb-1 font-semibold tracking-wide uppercase">
-        Say the letter!
-      </p>
-      <p className="text-gray-400 text-xs mb-8" dir="rtl">
-        استمع ثم انطق الحرف
-      </p>
+    <div className="max-w-sm mx-auto flex flex-col items-center px-4 py-6 gap-6">
 
-      {/* Letter card — tappable to replay */}
+      {/* ── Letter Display Card ── */}
       <motion.button
-        className="w-48 h-48 rounded-3xl bg-gradient-to-br from-primary/10 to-sky-100 border-2 border-primary/30 flex flex-col items-center justify-center mb-6 shadow-lg"
+        initial={{ scale: 0, rotate: -10 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.96 }}
         onClick={playReference}
+        className="w-full rounded-3xl bg-gradient-to-br from-violet-400 to-purple-600 p-8 text-center shadow-xl"
       >
-        <span className="text-8xl font-arabic leading-none">{letterWithVowel}</span>
-        <span className="text-sm text-gray-500 mt-2 font-mono">{letter.transliteration}</span>
-        <span className="text-xs text-primary mt-1">🔊 Tap to hear again</span>
+        <motion.div
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+          className="text-8xl font-arabic text-white leading-none mb-3"
+          dir="rtl"
+        >
+          {letterWithVowel}
+        </motion.div>
+        <div className="text-xl text-white/80 font-semibold">Say this letter!</div>
+        <div className="text-sm text-white/60 mt-1 italic">{letter.phonemeDescription}</div>
+        <div className="mt-3 text-white/70 text-sm">🔊 Tap to hear again</div>
       </motion.button>
 
-      <p className="text-center text-gray-400 text-xs mb-8 max-w-xs">
-        {letter.phonemeDescription}
-      </p>
-
-      {/* Action area */}
+      {/* ── Microphone / Feedback Area ── */}
       <AnimatePresence mode="wait">
+
+        {/* Playing audio phase */}
         {phase === 'playing_audio' && (
           <motion.div
             key="playing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             className="flex flex-col items-center gap-3"
           >
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center animate-pulse">
-              <span className="text-3xl">🔊</span>
-            </div>
-            <p className="text-blue-500 text-sm">Listen carefully…</p>
+            <motion.div
+              animate={{ scale: [1, 1.15, 1] }}
+              transition={{ repeat: Infinity, duration: 1 }}
+              className="w-28 h-28 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-xl"
+            >
+              <span className="text-5xl">🔊</span>
+            </motion.div>
+            <p className="text-blue-500 text-lg font-semibold">Listen carefully…</p>
           </motion.div>
         )}
 
+        {/* Ready to speak */}
         {phase === 'ready' && (
           <motion.div
             key="ready"
@@ -170,32 +176,30 @@ export function SpeakMode({
             className="flex flex-col items-center gap-4"
           >
             {!supported && (
-              <p className="text-amber-600 text-xs text-center max-w-xs mb-1">
+              <p className="text-amber-600 text-sm text-center max-w-xs">
                 Microphone not supported in this browser. Tap Skip to continue.
               </p>
             )}
             <motion.button
-              className="w-24 h-24 rounded-full bg-primary shadow-xl flex items-center justify-center text-5xl disabled:opacity-40"
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
+              className="w-[120px] h-[120px] rounded-full bg-gradient-to-br from-amber-400 to-orange-500 shadow-xl flex items-center justify-center text-5xl disabled:opacity-40"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={handleMicPress}
               disabled={!supported}
               aria-label="Start speaking"
             >
               🎤
             </motion.button>
-            <p className="text-gray-600 text-sm font-semibold">Tap to speak!</p>
+            <p className="text-gray-600 text-lg font-semibold">Tap to speak</p>
             {attempts > 0 && (
-              <button
-                onClick={onContinue}
-                className="text-gray-400 text-xs underline mt-1"
-              >
+              <button onClick={onContinue} className="text-gray-400 text-sm underline mt-1">
                 Skip
               </button>
             )}
           </motion.div>
         )}
 
+        {/* Listening */}
         {phase === 'listening' && (
           <motion.div
             key="listening"
@@ -204,36 +208,41 @@ export function SpeakMode({
             exit={{ scale: 0.8, opacity: 0 }}
             className="flex flex-col items-center gap-4"
           >
-            {/* Countdown ring */}
-            <div className="relative w-24 h-24">
-              <svg className="absolute inset-0 -rotate-90" width="96" height="96">
-                <circle cx="48" cy="48" r="42" fill="none" stroke="#e5e7eb" strokeWidth="8" />
-                <circle
-                  cx="48"
-                  cy="48"
-                  r="42"
-                  fill="none"
-                  stroke="#58CC02"
-                  strokeWidth="8"
-                  strokeDasharray={264}
-                  strokeDashoffset={264 * (1 - countdown / 5)}
-                  style={{ transition: 'stroke-dashoffset 1s linear' }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-4xl animate-pulse">🎙️</span>
-              </div>
-            </div>
-            <p className="text-primary font-bold text-sm">Listening… {countdown}s</p>
-            <button
-              onClick={() => handleEvaluate()}
-              className="text-gray-400 text-xs underline"
+            {/* Pulsing rose circle */}
+            <motion.div
+              animate={{ scale: [1, 1.15, 1] }}
+              transition={{ repeat: Infinity, duration: 0.8 }}
+              className="w-[120px] h-[120px] rounded-full bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center shadow-xl"
             >
+              <span className="text-5xl">🔴</span>
+            </motion.div>
+
+            {/* Sound wave bars */}
+            <div className="flex items-end gap-1 h-16">
+              {BAR_HEIGHTS.map((h, i) => (
+                <motion.div
+                  key={i}
+                  className="w-3 rounded-full bg-rose-400"
+                  animate={{ height: [`${h * 0.4}%`, `${h}%`, `${h * 0.4}%`] }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 0.6,
+                    delay: i * 0.1,
+                    ease: 'easeInOut',
+                  }}
+                  style={{ height: `${h * 0.4}%` }}
+                />
+              ))}
+            </div>
+
+            <p className="text-rose-500 text-lg font-semibold">Listening… {countdown}s</p>
+            <button onClick={() => handleEvaluate()} className="text-gray-400 text-sm underline">
               Done
             </button>
           </motion.div>
         )}
 
+        {/* Evaluating */}
         {phase === 'evaluating' && (
           <motion.div
             key="evaluating"
@@ -242,54 +251,73 @@ export function SpeakMode({
             exit={{ opacity: 0 }}
             className="flex flex-col items-center gap-3"
           >
-            <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center">
-              <span className="text-3xl animate-spin">⭐</span>
-            </div>
-            <p className="text-yellow-600 text-sm font-medium">Checking…</p>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+              className="text-5xl"
+            >
+              ⏳
+            </motion.div>
+            <p className="text-gray-500 text-lg font-medium">Checking…</p>
           </motion.div>
         )}
 
+        {/* Feedback */}
         {phase === 'feedback' && feedback && (
           <motion.div
             key="feedback"
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}
-            className="w-full max-w-sm bg-white rounded-3xl shadow-xl border border-gray-100 p-6 flex flex-col items-center gap-4"
+            className="w-full bg-white rounded-3xl shadow-xl border border-gray-100 p-6 flex flex-col items-center gap-4"
           >
-            <span className="text-5xl">{feedback.emoji}</span>
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              className="text-6xl"
+            >
+              {feedback.emoji}
+            </motion.span>
 
             <p className="text-2xl font-arabic text-gray-800 text-center" dir="rtl">
               {feedback.arabicMessage}
             </p>
 
-            <p className="text-gray-500 text-center text-sm">{feedback.englishMessage}</p>
+            <p className="text-gray-500 text-center text-base">{feedback.englishMessage}</p>
 
             {feedback.hint && (
               <div className="w-full bg-blue-50 rounded-2xl p-3 text-center">
-                <p className="text-blue-700 text-xs font-medium">💡 {feedback.hint}</p>
+                <p className="text-blue-700 text-sm font-medium">💡 {feedback.hint}</p>
               </div>
             )}
 
             {transcript ? (
-              <p className="text-gray-300 text-xs">I heard: "{transcript}"</p>
+              <div className="w-full bg-gray-50 rounded-2xl p-3 text-center">
+                <p className="text-gray-500 text-sm">You said:</p>
+                <p className="text-gray-700 font-arabic text-lg" dir="rtl">{transcript}</p>
+              </div>
             ) : null}
 
             <div className="flex gap-3 w-full mt-1">
               {feedback.shouldRepeat && attempts < 3 && (
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={handleTryAgain}
-                  className="flex-1 py-3 rounded-2xl border-2 border-primary text-primary font-bold text-sm"
+                  className="flex-1 py-4 rounded-2xl border-2 border-violet-400 text-violet-600 font-bold text-lg"
                 >
                   Try Again
-                </button>
+                </motion.button>
               )}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={onContinue}
-                className="flex-1 py-3 rounded-2xl bg-primary text-white font-bold text-sm shadow-md"
+                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-lg shadow-lg"
               >
-                Continue
-              </button>
+                Continue →
+              </motion.button>
             </div>
           </motion.div>
         )}
