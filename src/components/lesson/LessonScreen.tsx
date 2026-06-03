@@ -1,18 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Lesson } from '@/types'
 import { useProfileStore } from '@/store/profileStore'
 import { useProgressStore } from '@/store/progressStore'
 import { useGameStore } from '@/store/gameStore'
+import { useAdaptiveStore } from '@/store/adaptiveStore'
 import { getLetterById } from '@/data/letters'
+import { getTeacherFeedback, type TeacherFeedback } from '@/ai/teacherAgent'
 import { ExerciseProgress } from './ExerciseProgress'
 import { LessonIntro } from './LessonIntro'
 import { LessonResult } from './LessonResult'
+import { TeacherFeedbackOverlay } from './TeacherFeedbackOverlay'
 import { TeachMode } from '@/components/games/TeachMode'
 import { ListenPickMode } from '@/components/games/ListenPickMode'
 import { MatchMode } from '@/components/games/MatchMode'
 import { DragDropMode } from '@/components/games/DragDropMode'
+import { SpeakMode } from '@/components/games/SpeakMode'
 import { HeartBar } from '@/components/ui/HeartBar'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -29,19 +33,27 @@ export function LessonScreen({ lesson }: Props) {
   const getProgress = useProgressStore((s) => s.getProgress)
   const completeLesson = useProgressStore((s) => s.completeLesson)
   const deductHeart = useProgressStore((s) => s.deductHeart)
+  const getWeakLetters = useAdaptiveStore((s) => s.getWeakLetters)
+  const recordAttempt = useAdaptiveStore((s) => s.recordAttempt)
 
-  const { startSession, submitAnswer, nextExercise, session, endSession } = useGameStore()
+  const { startSession, submitAnswer, nextExercise, endSession } = useGameStore()
 
   const [phase, setPhase] = useState<Phase>('intro')
   const [exerciseIndex, setExerciseIndex] = useState(0)
   const [wrongCount, setWrongCount] = useState(0)
   const [showHeartOut, setShowHeartOut] = useState(false)
   const [result, setResult] = useState<{ stars: number; xpEarned: number; leveledUp: boolean } | null>(null)
+  const [teacherFeedback, setTeacherFeedback] = useState<TeacherFeedback | null>(null)
+
+  // Holds resolved teacher feedback waiting to be shown after "Continue"
+  const pendingFeedbackRef = useRef<TeacherFeedback | null>(null)
 
   const progress = getProgress(activeId)
   const hearts = progress.hearts
   const exercises = lesson.exercises
   const currentExercise = exercises[exerciseIndex]
+  const currentLetter = currentExercise ? getLetterById(currentExercise.letterId) : null
+  const weakLetterIds = getWeakLetters(activeId)
 
   const handleStart = () => {
     startSession(lesson.id, activeId, exercises.length, hearts)
@@ -52,19 +64,41 @@ export function LessonScreen({ lesson }: Props) {
 
   const handleCorrect = () => {
     submitAnswer(true)
+    if (currentExercise) recordAttempt(activeId, currentExercise.letterId, true)
   }
 
   const handleWrong = () => {
     submitAnswer(false)
     deductHeart(activeId)
-    setWrongCount((w) => w + 1)
-    const newHearts = hearts - 1
-    if (newHearts <= 0) {
+    const newWrong = wrongCount + 1
+    setWrongCount(newWrong)
+    if (currentExercise) recordAttempt(activeId, currentExercise.letterId, false)
+
+    if (hearts - newWrong <= 0) {
       setShowHeartOut(true)
+      return
+    }
+
+    // Fire teacher feedback fetch in the background
+    if (currentLetter) {
+      pendingFeedbackRef.current = null
+      getTeacherFeedback({
+        letterId: currentExercise!.letterId,
+        letterArabic: currentLetter.arabic,
+        transliteration: currentLetter.transliteration,
+        phonemeDescription: currentLetter.phonemeDescription,
+        childAttempt: '',
+        exerciseType: currentExercise!.type,
+        previousAttempts: 0,
+        weakLetters: weakLetterIds,
+        sessionWrongCount: newWrong,
+      }).then((fb) => {
+        pendingFeedbackRef.current = fb
+      }).catch(() => {})
     }
   }
 
-  const handleContinue = () => {
+  const advanceExercise = () => {
     const nextIndex = exerciseIndex + 1
     if (nextIndex >= exercises.length || hearts - wrongCount <= 0) {
       const completed = completeLesson(activeId, lesson.id, wrongCount)
@@ -77,11 +111,28 @@ export function LessonScreen({ lesson }: Props) {
     }
   }
 
+  const handleContinue = () => {
+    const fb = pendingFeedbackRef.current
+    pendingFeedbackRef.current = null
+    if (fb) {
+      setTeacherFeedback(fb)
+      return // overlay will call advanceExercise via handleDismissTeacher
+    }
+    advanceExercise()
+  }
+
+  const handleDismissTeacher = () => {
+    setTeacherFeedback(null)
+    advanceExercise()
+  }
+
   const handleRetry = () => {
     setPhase('intro')
     setExerciseIndex(0)
     setWrongCount(0)
     setResult(null)
+    pendingFeedbackRef.current = null
+    setTeacherFeedback(null)
     endSession()
   }
 
@@ -101,11 +152,7 @@ export function LessonScreen({ lesson }: Props) {
     )
   }
 
-  if (!currentExercise) {
-    return null
-  }
-
-  const currentLetter = getLetterById(currentExercise.letterId)
+  if (!currentExercise) return null
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -139,6 +186,16 @@ export function LessonScreen({ lesson }: Props) {
                 onContinue={handleContinue}
               />
             )}
+            {currentExercise.type === 'speak' && currentLetter && (
+              <SpeakMode
+                letter={currentLetter}
+                harakah={lesson.harakah}
+                profileId={activeId}
+                sessionWrongCount={wrongCount}
+                weakLetters={weakLetterIds}
+                onContinue={handleContinue}
+              />
+            )}
             {currentExercise.type === 'listen_pick' && (
               <ListenPickMode
                 exercise={currentExercise}
@@ -169,6 +226,9 @@ export function LessonScreen({ lesson }: Props) {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Teacher feedback overlay — slides up after wrong answers */}
+      <TeacherFeedbackOverlay feedback={teacherFeedback} onDismiss={handleDismissTeacher} />
 
       {/* No hearts modal */}
       <Modal open={showHeartOut} onClose={() => {}}>

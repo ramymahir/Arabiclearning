@@ -6,6 +6,8 @@ class AudioManager {
   private arabicVoice: SpeechSynthesisVoice | null = null
   private initialized = false
   private ttsSupported = false
+  // Blob URL cache for AI-generated TTS audio
+  private aiTtsCache: Map<string, string> = new Map()
 
   async init(): Promise<void> {
     if (this.initialized) return
@@ -30,24 +32,12 @@ class AudioManager {
   }
 
   playLetter(audioFile: string, ttsFallback: string): void {
-    // If we've already confirmed this MP3 loaded, use it
     if (this.confirmedLoaded.has(audioFile)) {
       const howl = this.cache.get(audioFile)
-      if (howl) {
-        howl.stop()
-        howl.play()
-        return
-      }
+      if (howl) { howl.stop(); howl.play(); return }
     }
-
-    // Use TTS — cancel any pending speech then speak after a tick
-    // (Chrome drops speak() if called synchronously after cancel())
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-      setTimeout(() => this.ttsSpeak(ttsFallback), 50)
-    }
-
-    // Background-load MP3 so it'll be used once available
+    // Try AI TTS (async, fire-and-forget with browser TTS fallback)
+    this.playAI(ttsFallback)
     this.backgroundLoad(audioFile)
   }
 
@@ -56,13 +46,35 @@ class AudioManager {
       const howl = this.cache.get(audioFile)
       if (howl) { howl.stop(); howl.play(); return }
     }
-
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-      setTimeout(() => this.ttsSpeak(arabicText), 50)
-    }
-
+    this.playAI(arabicText)
     if (audioFile) this.backgroundLoad(audioFile)
+  }
+
+  private async playAI(text: string): Promise<void> {
+    // Use cached blob if available
+    if (this.aiTtsCache.has(text)) {
+      const audio = new Audio(this.aiTtsCache.get(text)!)
+      audio.volume = 0.8
+      audio.play().catch(() => this.ttsSpeak(text))
+      return
+    }
+    // Fetch from API
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      })
+      if (!res.ok) throw new Error(`TTS ${res.status}`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      this.aiTtsCache.set(text, url)
+      const audio = new Audio(url)
+      audio.volume = 0.8
+      audio.play().catch(() => this.ttsSpeak(text))
+    } catch {
+      this.ttsSpeak(text)
+    }
   }
 
   playSFX(name: 'correct' | 'wrong' | 'levelup' | 'heartbreak' | 'complete'): void {

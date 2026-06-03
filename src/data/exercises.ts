@@ -42,13 +42,21 @@ export function generateLessonExercises(
 ): LessonExercise[] {
   const exercises: LessonExercise[] = []
 
-  // 1. Teach round for each letter
+  // 1. Teach + Speak paired for each letter
   for (const id of letterIds) {
     const letter = getLetterById(id)
     if (!letter) continue
     exercises.push({
       id: nextId(),
       type: 'teach',
+      letterId: id,
+      correctAnswer: id,
+      distractors: [],
+    })
+    // Speak exercise immediately after each teach — no heart penalty
+    exercises.push({
+      id: nextId(),
+      type: 'speak',
       letterId: id,
       correctAnswer: id,
       distractors: [],

@@ -38,7 +38,7 @@ export interface ArabicLetter {
   order: number
 }
 
-export type ExerciseType = 'teach' | 'listen_pick' | 'match' | 'dragdrop'
+export type ExerciseType = 'teach' | 'listen_pick' | 'match' | 'dragdrop' | 'speak'
 
 export interface LessonExercise {
   id: string
