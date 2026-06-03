@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useProfileStore } from '@/store/profileStore'
@@ -13,6 +13,29 @@ import { audioManager } from '@/audio/audioManager'
 export function ProfilePage() {
   const navigate = useNavigate()
   const { profiles, setActiveProfile, addProfile, removeProfile } = useProfileStore()
+  const [audioStatus, setAudioStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    audioManager.init()
+  }, [])
+
+  const testAudio = () => {
+    audioManager.init()
+    const { ttsAvailable, arabicVoice } = audioManager.getVoiceStatus()
+    if (!ttsAvailable) {
+      setAudioStatus('❌ Text-to-speech not supported in this browser')
+      return
+    }
+    setAudioStatus(arabicVoice ? `✅ Arabic voice: ${arabicVoice}` : '⚠️ No Arabic voice found — using default')
+    // Play a test word: "مرحبا" (hello)
+    window.speechSynthesis.cancel()
+    setTimeout(() => {
+      const u = new SpeechSynthesisUtterance('مَرْحَبًا')
+      u.lang = 'ar-SA'
+      u.rate = 0.8
+      window.speechSynthesis.speak(u)
+    }, 50)
+  }
   const { getProgress, initProfile } = useProgressStore()
   const [showForm, setShowForm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
@@ -47,6 +70,20 @@ export function ProfilePage() {
         <p className="text-xl font-bold text-gray-600">Arabic Reading Adventure</p>
         <div className="mt-2">
           <ArabicText size="base" className="text-gray-500">تعلّم القراءة العربية</ArabicText>
+        </div>
+        {/* Audio test */}
+        <div className="mt-4">
+          <button
+            onClick={testAudio}
+            className="text-sm bg-white border border-border rounded-xl px-4 py-2 text-gray-600 hover:bg-gray-50"
+          >
+            🔊 Test Sound
+          </button>
+          {audioStatus && (
+            <div className="mt-2 text-xs text-gray-500 bg-white rounded-xl px-3 py-2 border border-border">
+              {audioStatus}
+            </div>
+          )}
         </div>
       </motion.div>
 

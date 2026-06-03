@@ -5,6 +5,7 @@ class AudioManager {
   private confirmedLoaded = new Set<string>()
   private arabicVoice: SpeechSynthesisVoice | null = null
   private initialized = false
+  private ttsSupported = false
 
   async init(): Promise<void> {
     if (this.initialized) return
@@ -15,6 +16,7 @@ class AudioManager {
 
   private loadArabicVoice(): void {
     if (!('speechSynthesis' in window)) return
+    this.ttsSupported = true
     const pick = () => {
       const voices = window.speechSynthesis.getVoices()
       this.arabicVoice =
@@ -28,30 +30,37 @@ class AudioManager {
   }
 
   playLetter(audioFile: string, ttsFallback: string): void {
-    this.stopLetters()
-
     // If we've already confirmed this MP3 loaded, use it
     if (this.confirmedLoaded.has(audioFile)) {
       const howl = this.cache.get(audioFile)
-      if (howl) { howl.play(); return }
+      if (howl) {
+        howl.stop()
+        howl.play()
+        return
+      }
     }
 
-    // Use TTS immediately — it's always available
-    this.tts(ttsFallback)
+    // Use TTS — cancel any pending speech then speak after a tick
+    // (Chrome drops speak() if called synchronously after cancel())
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      setTimeout(() => this.ttsSpeak(ttsFallback), 50)
+    }
 
-    // Background-load the MP3 so it works when files are added later
+    // Background-load MP3 so it'll be used once available
     this.backgroundLoad(audioFile)
   }
 
   playWord(audioFile: string | undefined, arabicText: string): void {
-    this.stopLetters()
-
     if (audioFile && this.confirmedLoaded.has(audioFile)) {
       const howl = this.cache.get(audioFile)
-      if (howl) { howl.play(); return }
+      if (howl) { howl.stop(); howl.play(); return }
     }
 
-    this.tts(arabicText)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      setTimeout(() => this.ttsSpeak(arabicText), 50)
+    }
 
     if (audioFile) this.backgroundLoad(audioFile)
   }
@@ -60,11 +69,32 @@ class AudioManager {
     const file = `audio/sfx/${name}.mp3`
     if (this.confirmedLoaded.has(file)) {
       const h = this.cache.get(file)
-      if (h) { h.play(); return }
+      if (h) { h.stop(); h.play(); return }
     }
-    // Always use tone fallback (files may not exist)
     this.playSFXTone(name)
     this.backgroundLoad(file)
+  }
+
+  private ttsSpeak(text: string): void {
+    if (!('speechSynthesis' in window)) return
+    if (!this.initialized) this.init()
+
+    const utter = new SpeechSynthesisUtterance(text)
+    utter.lang = 'ar-SA'
+    utter.rate = 0.8
+    utter.pitch = 1.0
+
+    // Only set voice if we found one — otherwise browser picks based on lang
+    if (this.arabicVoice) utter.voice = this.arabicVoice
+
+    utter.onerror = (e) => {
+      // 'interrupted' is normal when we cancel before replaying — ignore it
+      if (e.error !== 'interrupted') {
+        console.warn('TTS error:', e.error)
+      }
+    }
+
+    window.speechSynthesis.speak(utter)
   }
 
   private backgroundLoad(src: string): void {
@@ -75,10 +105,7 @@ class AudioManager {
       preload: true,
       volume: 0.8,
       onload: () => this.confirmedLoaded.add(src),
-      onloaderror: () => {
-        // File doesn't exist — remove from cache so we don't retry
-        this.cache.delete(src)
-      },
+      onloaderror: () => this.cache.delete(src),
     })
     this.cache.set(src, howl)
   }
@@ -109,8 +136,7 @@ class AudioManager {
       } else if (name === 'complete') {
         osc.type = 'sine'
         ;[523, 659, 784, 1047].forEach((freq, i) => {
-          const t = ctx.currentTime + i * 0.1
-          osc.frequency.setValueAtTime(freq, t)
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1)
         })
         gain.gain.setValueAtTime(0.25, ctx.currentTime)
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
@@ -122,32 +148,22 @@ class AudioManager {
         osc.start(); osc.stop(ctx.currentTime + 0.3)
       }
     } catch {
-      // AudioContext not available in this environment
+      // AudioContext unavailable
     }
   }
 
-  private tts(text: string): void {
-    if (!('speechSynthesis' in window)) return
-    // Ensure we're initialized
-    if (!this.initialized) this.init()
-    window.speechSynthesis.cancel()
-    const utter = new SpeechSynthesisUtterance(text)
-    utter.lang = 'ar-SA'
-    utter.rate = 0.8
-    utter.pitch = 1.0
-    if (this.arabicVoice) utter.voice = this.arabicVoice
-    window.speechSynthesis.speak(utter)
-  }
-
   stopLetters(): void {
-    this.cache.forEach((h) => {
-      if (h.playing()) h.stop()
-    })
+    this.cache.forEach((h) => { if (h.playing()) h.stop() })
     if ('speechSynthesis' in window) window.speechSynthesis.cancel()
   }
 
-  stopAll(): void {
-    this.stopLetters()
+  stopAll(): void { this.stopLetters() }
+
+  getVoiceStatus(): { ttsAvailable: boolean; arabicVoice: string | null } {
+    return {
+      ttsAvailable: 'speechSynthesis' in window,
+      arabicVoice: this.arabicVoice?.name ?? null,
+    }
   }
 }
 
