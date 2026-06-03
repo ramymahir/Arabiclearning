@@ -11,10 +11,10 @@ import { audioManager } from '@/audio/audioManager'
 const TEST_LETTER_IDS = ['alef', 'seen', 'ain', 'meem', 'ya']
 
 const OPTION_COLORS = [
-  'bg-amber-400 hover:bg-amber-500 shadow-amber-300',
-  'bg-rose-400 hover:bg-rose-500 shadow-rose-300',
-  'bg-sky-400 hover:bg-sky-500 shadow-sky-300',
-  'bg-emerald-400 hover:bg-emerald-500 shadow-emerald-300',
+  'bg-amber-600 hover:bg-amber-700 shadow-amber-500',
+  'bg-rose-500 hover:bg-rose-600 shadow-rose-400',
+  'bg-sky-500 hover:bg-sky-600 shadow-sky-400',
+  'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-400',
 ]
 
 function shuffle<T>(arr: T[]): T[] {

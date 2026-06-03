@@ -7,7 +7,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'a',
     phonemeDescription: 'like "a" in apple — open your mouth wide!',
     audioFile: 'letters/alef.mp3',
-    ttsFallback: 'أَ',
+    ttsFallback: 'أَلِف',
     forms: { isolated: 'ا', beginning: 'أَ', middle: 'ـا', end: 'ـا' },
     examples: [
       { arabic: 'أَسَد', transliteration: 'asad', meaning: 'lion', emoji: '🦁' },
@@ -22,7 +22,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'b',
     phonemeDescription: 'like "b" in ball — lips together, then pop!',
     audioFile: 'letters/ba.mp3',
-    ttsFallback: 'بَ',
+    ttsFallback: 'بَاء',
     forms: { isolated: 'ب', beginning: 'بَـ', middle: 'ـبَـ', end: 'ـب' },
     examples: [
       { arabic: 'بَطَّة', transliteration: 'batta', meaning: 'duck', emoji: '🦆' },
@@ -37,7 +37,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 't',
     phonemeDescription: 'like "t" in top — tip of tongue touches top teeth!',
     audioFile: 'letters/ta.mp3',
-    ttsFallback: 'تَ',
+    ttsFallback: 'تَاء',
     forms: { isolated: 'ت', beginning: 'تَـ', middle: 'ـتَـ', end: 'ـت' },
     examples: [
       { arabic: 'تُفَّاحَة', transliteration: 'tuffaha', meaning: 'apple', emoji: '🍎' },
@@ -52,7 +52,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'th',
     phonemeDescription: 'like "th" in think — stick your tongue between your teeth!',
     audioFile: 'letters/tha.mp3',
-    ttsFallback: 'ثَ',
+    ttsFallback: 'ثَاء',
     forms: { isolated: 'ث', beginning: 'ثَـ', middle: 'ـثَـ', end: 'ـث' },
     examples: [
       { arabic: 'ثَعْلَب', transliteration: 'thaalab', meaning: 'fox', emoji: '🦊' },
@@ -67,7 +67,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'j',
     phonemeDescription: 'like "j" in jump — or like the "s" in treasure!',
     audioFile: 'letters/jeem.mp3',
-    ttsFallback: 'جَ',
+    ttsFallback: 'جِيم',
     forms: { isolated: 'ج', beginning: 'جَـ', middle: 'ـجَـ', end: 'ـج' },
     examples: [
       { arabic: 'جَمَل', transliteration: 'jamal', meaning: 'camel', emoji: '🐪' },
@@ -82,7 +82,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'h',
     phonemeDescription: 'a soft breathy "h" from deep in your throat — like a whispered sigh!',
     audioFile: 'letters/ha.mp3',
-    ttsFallback: 'حَ',
+    ttsFallback: 'حَاء',
     forms: { isolated: 'ح', beginning: 'حَـ', middle: 'ـحَـ', end: 'ـح' },
     examples: [
       { arabic: 'حِصَان', transliteration: 'hisan', meaning: 'horse', emoji: '🐴' },
@@ -97,7 +97,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'kh',
     phonemeDescription: 'like clearing your throat — the "ch" in Scottish "loch"!',
     audioFile: 'letters/kha.mp3',
-    ttsFallback: 'خَ',
+    ttsFallback: 'خَاء',
     forms: { isolated: 'خ', beginning: 'خَـ', middle: 'ـخَـ', end: 'ـخ' },
     examples: [
       { arabic: 'خَرُوف', transliteration: 'kharuf', meaning: 'sheep', emoji: '🐑' },
@@ -112,7 +112,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'd',
     phonemeDescription: 'like "d" in dog — tip of tongue behind top teeth!',
     audioFile: 'letters/dal.mp3',
-    ttsFallback: 'دَ',
+    ttsFallback: 'دَال',
     forms: { isolated: 'د', beginning: 'دَ', middle: 'ـدَ', end: 'ـد' },
     examples: [
       { arabic: 'دُبّ', transliteration: 'dubb', meaning: 'bear', emoji: '🐻' },
@@ -127,7 +127,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'dh',
     phonemeDescription: 'like "th" in this or that — tongue between your teeth, voice on!',
     audioFile: 'letters/dhal.mp3',
-    ttsFallback: 'ذَ',
+    ttsFallback: 'ذَال',
     forms: { isolated: 'ذ', beginning: 'ذَ', middle: 'ـذَ', end: 'ـذ' },
     examples: [
       { arabic: 'ذِئْب', transliteration: 'dhib', meaning: 'wolf', emoji: '🐺' },
@@ -142,7 +142,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'r',
     phonemeDescription: 'a rolled "r" — like a purring cat or Spanish "rr"!',
     audioFile: 'letters/ra.mp3',
-    ttsFallback: 'رَ',
+    ttsFallback: 'رَاء',
     forms: { isolated: 'ر', beginning: 'رَ', middle: 'ـرَ', end: 'ـر' },
     examples: [
       { arabic: 'رُمَّان', transliteration: 'rumman', meaning: 'pomegranate', emoji: '🍈' },
@@ -157,7 +157,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'z',
     phonemeDescription: 'like "z" in zebra — make a buzzing bee sound!',
     audioFile: 'letters/zay.mp3',
-    ttsFallback: 'زَ',
+    ttsFallback: 'زَاي',
     forms: { isolated: 'ز', beginning: 'زَ', middle: 'ـزَ', end: 'ـز' },
     examples: [
       { arabic: 'زَرَافَة', transliteration: 'zarafa', meaning: 'giraffe', emoji: '🦒' },
@@ -172,7 +172,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 's',
     phonemeDescription: 'like "s" in sun — a smooth hissing sound!',
     audioFile: 'letters/seen.mp3',
-    ttsFallback: 'سَ',
+    ttsFallback: 'سِين',
     forms: { isolated: 'س', beginning: 'سَـ', middle: 'ـسَـ', end: 'ـس' },
     examples: [
       { arabic: 'سَمَكَة', transliteration: 'samaka', meaning: 'fish', emoji: '🐟' },
@@ -187,7 +187,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'sh',
     phonemeDescription: 'like "sh" in shoe — say "shhhh" to be quiet!',
     audioFile: 'letters/sheen.mp3',
-    ttsFallback: 'شَ',
+    ttsFallback: 'شِين',
     forms: { isolated: 'ش', beginning: 'شَـ', middle: 'ـشَـ', end: 'ـش' },
     examples: [
       { arabic: 'شَمْس', transliteration: 'shams', meaning: 'sun', emoji: '☀️' },
@@ -202,7 +202,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'ṣ',
     phonemeDescription: 'a heavy "s" — press your tongue down and make it deeper than a normal s!',
     audioFile: 'letters/sad.mp3',
-    ttsFallback: 'صَ',
+    ttsFallback: 'صَاد',
     forms: { isolated: 'ص', beginning: 'صَـ', middle: 'ـصَـ', end: 'ـص' },
     examples: [
       { arabic: 'صَقْر', transliteration: 'saqr', meaning: 'falcon', emoji: '🦅' },
@@ -217,7 +217,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'ḍ',
     phonemeDescription: 'a heavy "d" — push your tongue back and make it sound bigger!',
     audioFile: 'letters/dad.mp3',
-    ttsFallback: 'ضَ',
+    ttsFallback: 'ضَاد',
     forms: { isolated: 'ض', beginning: 'ضَـ', middle: 'ـضَـ', end: 'ـض' },
     examples: [
       { arabic: 'ضِفْدَع', transliteration: 'difda', meaning: 'frog', emoji: '🐸' },
@@ -232,7 +232,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'ṭ',
     phonemeDescription: 'a heavy "t" — push your tongue back and make it sound bigger!',
     audioFile: 'letters/ta2.mp3',
-    ttsFallback: 'طَ',
+    ttsFallback: 'طَاء',
     forms: { isolated: 'ط', beginning: 'طَـ', middle: 'ـطَـ', end: 'ـط' },
     examples: [
       { arabic: 'طَائِر', transliteration: 'taer', meaning: 'bird', emoji: '🐦' },
@@ -247,7 +247,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'ẓ',
     phonemeDescription: 'a heavy "dh" — like "th" in this but deeper in your mouth!',
     audioFile: 'letters/dha.mp3',
-    ttsFallback: 'ظَ',
+    ttsFallback: 'ظَاء',
     forms: { isolated: 'ظ', beginning: 'ظَـ', middle: 'ـظَـ', end: 'ـظ' },
     examples: [
       { arabic: 'ظَبْي', transliteration: 'zaby', meaning: 'gazelle', emoji: '🦌' },
@@ -262,7 +262,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: '\'',
     phonemeDescription: 'a unique Arabic sound — squeeze your throat and say "aaah" from deep inside!',
     audioFile: 'letters/ain.mp3',
-    ttsFallback: 'عَ',
+    ttsFallback: 'عَيْن',
     forms: { isolated: 'ع', beginning: 'عَـ', middle: 'ـعَـ', end: 'ـع' },
     examples: [
       { arabic: 'عَصْفُور', transliteration: 'asfur', meaning: 'sparrow', emoji: '🐦' },
@@ -277,7 +277,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'gh',
     phonemeDescription: 'like gargling water at the back of your throat — the French "r"!',
     audioFile: 'letters/ghain.mp3',
-    ttsFallback: 'غَ',
+    ttsFallback: 'غَيْن',
     forms: { isolated: 'غ', beginning: 'غَـ', middle: 'ـغَـ', end: 'ـغ' },
     examples: [
       { arabic: 'غُرَاب', transliteration: 'ghurab', meaning: 'crow', emoji: '🐦‍⬛' },
@@ -292,7 +292,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'f',
     phonemeDescription: 'like "f" in fish — top teeth on lower lip!',
     audioFile: 'letters/fa.mp3',
-    ttsFallback: 'فَ',
+    ttsFallback: 'فَاء',
     forms: { isolated: 'ف', beginning: 'فَـ', middle: 'ـفَـ', end: 'ـف' },
     examples: [
       { arabic: 'فَرَاشَة', transliteration: 'farasha', meaning: 'butterfly', emoji: '🦋' },
@@ -307,7 +307,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'q',
     phonemeDescription: 'a deep "k" from the very back of your throat — deeper than any English sound!',
     audioFile: 'letters/qaf.mp3',
-    ttsFallback: 'قَ',
+    ttsFallback: 'قَاف',
     forms: { isolated: 'ق', beginning: 'قَـ', middle: 'ـقَـ', end: 'ـق' },
     examples: [
       { arabic: 'قِطَّة', transliteration: 'qitta', meaning: 'cat', emoji: '🐱' },
@@ -322,7 +322,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'k',
     phonemeDescription: 'like "k" in kite — back of tongue touches the roof of your mouth!',
     audioFile: 'letters/kaf.mp3',
-    ttsFallback: 'كَ',
+    ttsFallback: 'كَاف',
     forms: { isolated: 'ك', beginning: 'كَـ', middle: 'ـكَـ', end: 'ـك' },
     examples: [
       { arabic: 'كَلْب', transliteration: 'kalb', meaning: 'dog', emoji: '🐕' },
@@ -337,7 +337,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'l',
     phonemeDescription: 'like "l" in lemon — tip of tongue behind your top teeth!',
     audioFile: 'letters/lam.mp3',
-    ttsFallback: 'لَ',
+    ttsFallback: 'لَام',
     forms: { isolated: 'ل', beginning: 'لَـ', middle: 'ـلَـ', end: 'ـل' },
     examples: [
       { arabic: 'لَيْمُون', transliteration: 'laymun', meaning: 'lemon', emoji: '🍋' },
@@ -352,7 +352,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'm',
     phonemeDescription: 'like "m" in moon — lips together, hum through your nose!',
     audioFile: 'letters/meem.mp3',
-    ttsFallback: 'مَ',
+    ttsFallback: 'مِيم',
     forms: { isolated: 'م', beginning: 'مَـ', middle: 'ـمَـ', end: 'ـم' },
     examples: [
       { arabic: 'مَوْز', transliteration: 'mawz', meaning: 'banana', emoji: '🍌' },
@@ -367,7 +367,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'n',
     phonemeDescription: 'like "n" in night — tongue tip behind top teeth, sound through your nose!',
     audioFile: 'letters/noon.mp3',
-    ttsFallback: 'نَ',
+    ttsFallback: 'نُون',
     forms: { isolated: 'ن', beginning: 'نَـ', middle: 'ـنَـ', end: 'ـن' },
     examples: [
       { arabic: 'نَخْل', transliteration: 'nakhl', meaning: 'palm tree', emoji: '🌴' },
@@ -382,7 +382,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'h',
     phonemeDescription: 'like "h" in hello — a gentle breath of air from your mouth!',
     audioFile: 'letters/ha2.mp3',
-    ttsFallback: 'هَ',
+    ttsFallback: 'هَاء',
     forms: { isolated: 'ه', beginning: 'هَـ', middle: 'ـهَـ', end: 'ـه' },
     examples: [
       { arabic: 'هِرَّة', transliteration: 'hirra', meaning: 'cat', emoji: '😺' },
@@ -397,7 +397,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'w',
     phonemeDescription: 'like "w" in water — round your lips like a circle!',
     audioFile: 'letters/waw.mp3',
-    ttsFallback: 'وَ',
+    ttsFallback: 'وَاو',
     forms: { isolated: 'و', beginning: 'وَ', middle: 'ـوَ', end: 'ـو' },
     examples: [
       { arabic: 'وَرْدَة', transliteration: 'warda', meaning: 'rose', emoji: '🌹' },
@@ -412,7 +412,7 @@ export const ARABIC_LETTERS: ArabicLetter[] = [
     transliteration: 'y',
     phonemeDescription: 'like "y" in yes — spread your lips into a smile!',
     audioFile: 'letters/ya.mp3',
-    ttsFallback: 'يَ',
+    ttsFallback: 'يَاء',
     forms: { isolated: 'ي', beginning: 'يَـ', middle: 'ـيَـ', end: 'ـي' },
     examples: [
       { arabic: 'يَاسَمِين', transliteration: 'yasmin', meaning: 'jasmine', emoji: '🌼' },

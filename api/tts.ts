@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: 'TTS not configured' })
   }
 
-  const { text, voice = 'echo' } = req.body ?? {}
+  const { text, voice = 'alloy' } = req.body ?? {}
   if (!text || typeof text !== 'string' || text.length > 500) {
     return res.status(400).json({ error: 'text is required (max 500 chars)' })
   }
@@ -19,10 +19,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const openai = new OpenAI({ apiKey })
     const mp3 = await openai.audio.speech.create({
-      model: 'tts-1',
+      model: 'tts-1-hd',
       voice,
       input: text,
-      speed: 0.9,
+      speed: 0.85,
     })
 
     const buffer = Buffer.from(await mp3.arrayBuffer())

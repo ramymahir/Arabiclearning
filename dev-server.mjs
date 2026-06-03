@@ -83,7 +83,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     const body = await parseBody(req)
-    const { text, voice = 'echo' } = body
+    const { text, voice = 'alloy' } = body
 
     if (!text || typeof text !== 'string' || text.length > 500) {
       return jsonReply(res, 400, { error: 'text required (max 500 chars)' })
@@ -93,10 +93,10 @@ const server = http.createServer(async (req, res) => {
       const { default: OpenAI } = await import('openai')
       const openai = new OpenAI({ apiKey })
       const mp3 = await openai.audio.speech.create({
-        model: 'tts-1',
+        model: 'tts-1-hd',
         voice,
         input: text,
-        speed: 0.9,
+        speed: 0.85,
       })
       const buffer = Buffer.from(await mp3.arrayBuffer())
       res.writeHead(200, {
