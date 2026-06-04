@@ -98,7 +98,7 @@ export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }:
           let cardClass = WORD_CARD_COLORS[i % WORD_CARD_COLORS.length]
           if (showCorrect || revealCorrect) cardClass = 'bg-emerald-400 border-emerald-500'
           if (showWrong) cardClass = 'bg-rose-400 border-rose-500'
-          if (!isSelected && result !== 'pending' && !revealCorrect) cardClass = `${WORD_CARD_COLORS[i % WORD_CARD_COLORS.length]} opacity-50`
+          if (!isSelected && result !== 'pending' && !revealCorrect) cardClass = `${WORD_CARD_COLORS[i % WORD_CARD_COLORS.length]} opacity-60`
 
           return (
             <motion.button

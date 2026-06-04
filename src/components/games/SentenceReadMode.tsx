@@ -101,7 +101,7 @@ export function SentenceReadMode({ exercise, onCorrect, onWrong, onContinue }: P
           let colorClass = OPTION_COLORS[idx % OPTION_COLORS.length]
           if (showCorrect || revealCorrect) colorClass = 'bg-emerald-400 border-emerald-500 text-white'
           if (showWrong) colorClass = 'bg-rose-400 border-rose-500 text-white'
-          if (!isSelected && result !== 'pending' && !revealCorrect) colorClass = `${OPTION_COLORS[idx % OPTION_COLORS.length]} opacity-50`
+          if (!isSelected && result !== 'pending' && !revealCorrect) colorClass = `${OPTION_COLORS[idx % OPTION_COLORS.length]} opacity-60`
 
           return (
             <motion.button

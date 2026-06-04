@@ -8,7 +8,7 @@
   }
 
   html {
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Baloo 2', sans-serif;
     background-color: #f7f7f7;
   }
 
@@ -27,11 +27,11 @@
   }
 
   .font-arabic {
-    font-family: 'Amiri', 'Noto Naskh Arabic', 'Traditional Arabic', serif;
+    font-family: 'Noto Naskh Arabic', 'Traditional Arabic', serif;
   }
 
   .font-ui {
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Baloo 2', sans-serif;
   }
 }
 

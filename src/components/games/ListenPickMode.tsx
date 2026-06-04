@@ -113,7 +113,7 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
           let colorClass = theme.base
           if (showCorrect || revealCorrect) colorClass = theme.correct
           if (showWrong) colorClass = theme.wrong
-          if (!isSelected && result !== 'pending' && !revealCorrect) colorClass = `${theme.base} opacity-50`
+          if (!isSelected && result !== 'pending' && !revealCorrect) colorClass = `${theme.base} opacity-60`
 
           return (
             <motion.button

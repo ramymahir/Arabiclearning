@@ -84,7 +84,7 @@ export function DragDropMode({ exercise, harakah, onCorrect, onWrong, onContinue
       <div className="flex gap-4">
         {/* Letters column */}
         <div className="flex-1">
-          <div className="text-xs text-center font-bold text-gray-400 mb-2 uppercase tracking-wide">
+          <div className="text-xs text-center font-bold text-gray-600 mb-2 uppercase tracking-wide">
             Letters
           </div>
           <div className="flex flex-col gap-3">
@@ -126,7 +126,7 @@ export function DragDropMode({ exercise, harakah, onCorrect, onWrong, onContinue
 
         {/* Drop zones / word targets */}
         <div className="flex-1">
-          <div className="text-xs text-center font-bold text-gray-400 mb-2 uppercase tracking-wide">
+          <div className="text-xs text-center font-bold text-gray-600 mb-2 uppercase tracking-wide">
             Words
           </div>
           <div className="flex flex-col gap-3">
@@ -150,7 +150,7 @@ export function DragDropMode({ exercise, harakah, onCorrect, onWrong, onContinue
                   <span className="text-lg font-arabic text-gray-700" dir="rtl">
                     {letter.examples[0].arabic}
                   </span>
-                  <span className="text-xs text-gray-400">{letter.examples[0].meaning}</span>
+                  <span className="text-xs font-semibold text-gray-600">{letter.examples[0].meaning}</span>
                 </div>
               )
             })}

@@ -47,7 +47,7 @@ export function PathNode({ lesson, progress, unlocked, isCurrent, position }: Pr
               ? done
                 ? `${colors.bg} border-white text-white`
                 : `${colors.bg} border-white text-white`
-              : 'bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed'
+              : 'bg-gray-200 border-gray-400 text-gray-600 cursor-not-allowed'
             }
             ${isCurrent ? 'ring-4 ring-offset-2 ring-white shadow-2xl' : ''}
           `}

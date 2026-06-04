@@ -5,8 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        arabic: ['Amiri', 'Noto Naskh Arabic', 'Traditional Arabic', 'serif'],
-        ui: ['Nunito', 'sans-serif'],
+        arabic: ['Noto Naskh Arabic', 'Traditional Arabic', 'serif'],
+        ui: ['Baloo 2', 'sans-serif'],
       },
       colors: {
         primary: {

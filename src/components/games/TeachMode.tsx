@@ -78,7 +78,7 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
         transition={{ delay: 0.3 }}
         className="bg-white rounded-3xl shadow-xl p-5"
       >
-        <div className="text-center text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">
+        <div className="text-center text-sm font-bold text-gray-600 uppercase tracking-wide mb-3">
           Letter Forms
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -90,7 +90,7 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
               onClick={() => playLetter(letter, letterSound)}
               className="bg-gray-50 rounded-2xl shadow-md p-3 flex flex-col items-center gap-1 border border-gray-100"
             >
-              <span className="text-xs font-semibold text-gray-400 uppercase">
+              <span className="text-xs font-bold text-gray-700 uppercase">
                 {FORM_LABELS[form]}
               </span>
               <span className="text-4xl font-arabic text-gray-800" dir="rtl">
@@ -107,7 +107,7 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <div className="text-center text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">
+        <div className="text-center text-sm font-bold text-gray-600 uppercase tracking-wide mb-3">
           Example Words
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
