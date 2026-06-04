@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Lesson } from '@/types'
+import type { Lesson, LessonExercise } from '@/types'
 import { useProfileStore } from '@/store/profileStore'
 import { useProgressStore } from '@/store/progressStore'
 import { useGameStore } from '@/store/gameStore'
 import { useAdaptiveStore } from '@/store/adaptiveStore'
+import { useOnboardingStore } from '@/store/onboardingStore'
 import { getLetterById } from '@/data/letters'
+import { adaptExercises, type LetterMastery } from '@/data/exercises'
 import { getTeacherFeedback, type TeacherFeedback } from '@/ai/teacherAgent'
 import { ExerciseProgress } from './ExerciseProgress'
 import { LessonIntro } from './LessonIntro'
@@ -36,10 +38,14 @@ export function LessonScreen({ lesson }: Props) {
   const getWeakLetters = useAdaptiveStore((s) => s.getWeakLetters)
   const recordAttempt = useAdaptiveStore((s) => s.recordAttempt)
 
+  const getStats = useAdaptiveStore((s) => s.getStats)
+  const getLevel = useOnboardingStore((s) => s.getLevel)
+
   const { startSession, submitAnswer, nextExercise, endSession } = useGameStore()
 
   const [phase, setPhase] = useState<Phase>('intro')
   const [exerciseIndex, setExerciseIndex] = useState(0)
+  const [exercises, setExercises] = useState<LessonExercise[]>(lesson.exercises)
   const [wrongCount, setWrongCount] = useState(0)
   const [showHeartOut, setShowHeartOut] = useState(false)
   const [result, setResult] = useState<{ stars: number; xpEarned: number; leveledUp: boolean } | null>(null)
@@ -47,16 +53,34 @@ export function LessonScreen({ lesson }: Props) {
 
   // Holds resolved teacher feedback waiting to be shown after "Continue"
   const pendingFeedbackRef = useRef<TeacherFeedback | null>(null)
+  // Mastery snapshot taken at lesson start — prevents mid-lesson re-adaptation
+  const masteryMapRef = useRef<Record<string, LetterMastery>>({})
+  // Per-letter wrong counts this session (for LessonResult tip card)
+  const sessionLetterWrongsRef = useRef<Record<string, number>>({})
 
   const progress = getProgress(activeId)
   const hearts = progress.hearts
-  const exercises = lesson.exercises
   const currentExercise = exercises[exerciseIndex]
   const currentLetter = currentExercise ? getLetterById(currentExercise.letterId) : null
   const weakLetterIds = getWeakLetters(activeId)
 
+  const rawLevel = getLevel(activeId)
+  const studentLevel = (['beginner', 'explorer', 'star'] as const)[rawLevel ?? 0] ?? 'beginner'
+  const totalLessonsCompleted = Object.values(getProgress(activeId).lessons).filter((l) => l.stars > 0).length
+
   const handleStart = () => {
-    startSession(lesson.id, activeId, exercises.length, hearts)
+    // Snapshot mastery data once so adaptation doesn't shift mid-lesson
+    const stats = getStats(activeId)
+    masteryMapRef.current = Object.fromEntries(
+      stats.map((s) => [
+        s.letterId,
+        { accuracy: s.attempts > 0 ? s.correct / s.attempts : 1.0, attempts: s.attempts },
+      ])
+    )
+    const adapted = adaptExercises(lesson.exercises, masteryMapRef.current, lesson.letterIds)
+    setExercises(adapted)
+    sessionLetterWrongsRef.current = {}
+    startSession(lesson.id, activeId, adapted.length, hearts)
     setPhase('playing')
     setExerciseIndex(0)
     setWrongCount(0)
@@ -72,7 +96,11 @@ export function LessonScreen({ lesson }: Props) {
     deductHeart(activeId)
     const newWrong = wrongCount + 1
     setWrongCount(newWrong)
-    if (currentExercise) recordAttempt(activeId, currentExercise.letterId, false)
+    if (currentExercise) {
+      recordAttempt(activeId, currentExercise.letterId, false)
+      const lid = currentExercise.letterId
+      sessionLetterWrongsRef.current[lid] = (sessionLetterWrongsRef.current[lid] ?? 0) + 1
+    }
 
     if (hearts - newWrong <= 0) {
       setShowHeartOut(true)
@@ -81,9 +109,12 @@ export function LessonScreen({ lesson }: Props) {
 
     // Fire teacher feedback fetch in the background
     if (currentLetter) {
+      const lid = currentExercise!.letterId
+      const stat = useAdaptiveStore.getState().data[activeId]?.[lid]
+      const letterAccuracy = stat && stat.attempts > 0 ? stat.correct / stat.attempts : 1.0
       pendingFeedbackRef.current = null
       getTeacherFeedback({
-        letterId: currentExercise!.letterId,
+        letterId: lid,
         letterArabic: currentLetter.arabic,
         transliteration: currentLetter.transliteration,
         phonemeDescription: currentLetter.phonemeDescription,
@@ -92,6 +123,9 @@ export function LessonScreen({ lesson }: Props) {
         previousAttempts: 0,
         weakLetters: weakLetterIds,
         sessionWrongCount: newWrong,
+        letterAccuracy,
+        studentLevel,
+        totalLessonsCompleted,
       }).then((fb) => {
         pendingFeedbackRef.current = fb
       }).catch(() => {})
@@ -129,9 +163,11 @@ export function LessonScreen({ lesson }: Props) {
   const handleRetry = () => {
     setPhase('intro')
     setExerciseIndex(0)
+    setExercises(lesson.exercises)
     setWrongCount(0)
     setResult(null)
     pendingFeedbackRef.current = null
+    sessionLetterWrongsRef.current = {}
     setTeacherFeedback(null)
     endSession()
   }
@@ -148,6 +184,8 @@ export function LessonScreen({ lesson }: Props) {
         lessonId={lesson.id}
         leveledUp={result.leveledUp}
         onRetry={handleRetry}
+        sessionLetterWrongs={sessionLetterWrongsRef.current}
+        lessonLetterIds={lesson.letterIds}
       />
     )
   }
@@ -194,6 +232,9 @@ export function LessonScreen({ lesson }: Props) {
                 sessionWrongCount={wrongCount}
                 weakLetters={weakLetterIds}
                 onContinue={handleContinue}
+                letterAccuracy={masteryMapRef.current[currentLetter.id]?.accuracy}
+                studentLevel={studentLevel}
+                totalLessonsCompleted={totalLessonsCompleted}
               />
             )}
             {currentExercise.type === 'listen_pick' && (

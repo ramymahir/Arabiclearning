@@ -18,6 +18,9 @@ export interface TeacherContext {
   previousAttempts: number
   weakLetters: string[]
   sessionWrongCount: number
+  letterAccuracy?: number
+  studentLevel?: 'beginner' | 'explorer' | 'star'
+  totalLessonsCompleted?: number
 }
 
 const FALLBACK_RESPONSES: TeacherFeedback[] = [

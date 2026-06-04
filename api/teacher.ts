@@ -18,7 +18,12 @@ Rules:
 - Hints describe mouth/tongue/lip/breath position concretely
 - Never say "wrong" — say "try again" or "almost"
 - If childAttempt is empty the child was silent — gently encourage them to try
-- If previousAttempts >= 2 set shouldRepeat to false and move them forward kindly`
+- If previousAttempts >= 2 set shouldRepeat to false and move them forward kindly
+
+Student context rules:
+- letterAccuracy (0–1): if < 0.4, give extra physical detail and say "This one is tricky — let's go slow"; if >= 0.8, acknowledge progress with "مَاشَاءَ اللّٰه" or similar praise
+- studentLevel: if 'beginner', use max 6-word English sentences and be extra gentle; if 'star', slightly more detail is fine
+- totalLessonsCompleted: be more celebratory for higher counts`
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -39,6 +44,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     previousAttempts,
     weakLetters,
     sessionWrongCount,
+    letterAccuracy,
+    studentLevel,
+    totalLessonsCompleted,
   } = req.body ?? {}
 
   if (!letterArabic) {
@@ -54,6 +62,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     previousAttempts: previousAttempts ?? 0,
     weakLetterIds: weakLetters ?? [],
     sessionWrongCount: sessionWrongCount ?? 0,
+    letterAccuracy: letterAccuracy ?? null,
+    studentLevel: studentLevel ?? 'beginner',
+    totalLessonsCompleted: totalLessonsCompleted ?? 0,
   })
 
   try {

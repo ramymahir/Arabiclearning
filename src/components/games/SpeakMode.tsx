@@ -16,6 +16,9 @@ interface Props {
   sessionWrongCount: number
   weakLetters: string[]
   onContinue: () => void
+  letterAccuracy?: number
+  studentLevel?: 'beginner' | 'explorer' | 'star'
+  totalLessonsCompleted?: number
 }
 
 const BAR_HEIGHTS = [40, 65, 90, 65, 40]
@@ -27,6 +30,9 @@ export function SpeakMode({
   sessionWrongCount,
   weakLetters,
   onContinue,
+  letterAccuracy,
+  studentLevel,
+  totalLessonsCompleted,
 }: Props) {
   const [phase, setPhase] = useState<Phase>('playing_audio')
   const [attempts, setAttempts] = useState(0)
@@ -86,6 +92,9 @@ export function SpeakMode({
       previousAttempts: currentAttempts - 1,
       weakLetters,
       sessionWrongCount,
+      letterAccuracy,
+      studentLevel,
+      totalLessonsCompleted,
     })
     setFeedback(fb)
     setPhase('feedback')

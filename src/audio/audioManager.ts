@@ -1,4 +1,5 @@
 import { Howl, Howler } from 'howler'
+import { getCachedAudio, setCachedAudio } from '@/utils/ttsCache'
 
 class AudioManager {
   private cache: Map<string, Howl> = new Map()
@@ -51,14 +52,24 @@ class AudioManager {
   }
 
   private async playAI(text: string): Promise<void> {
-    // Use cached blob if available
+    // L1: in-memory blob URL (session cache)
     if (this.aiTtsCache.has(text)) {
       const audio = new Audio(this.aiTtsCache.get(text)!)
       audio.volume = 0.8
       audio.play().catch(() => this.ttsSpeak(text))
       return
     }
-    // Fetch from API
+    // L2: persistent cache (survives page reload)
+    const cached = await getCachedAudio(text)
+    if (cached) {
+      const url = URL.createObjectURL(new Blob([cached], { type: 'audio/mpeg' }))
+      this.aiTtsCache.set(text, url)
+      const audio = new Audio(url)
+      audio.volume = 0.8
+      audio.play().catch(() => this.ttsSpeak(text))
+      return
+    }
+    // L3: fetch from API — store in both caches
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
@@ -66,8 +77,9 @@ class AudioManager {
         body: JSON.stringify({ text }),
       })
       if (!res.ok) throw new Error(`TTS ${res.status}`)
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
+      const buffer = await res.arrayBuffer()
+      setCachedAudio(text, buffer) // fire-and-forget persist
+      const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }))
       this.aiTtsCache.set(text, url)
       const audio = new Audio(url)
       audio.volume = 0.8

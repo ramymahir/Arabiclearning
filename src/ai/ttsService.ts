@@ -1,18 +1,43 @@
-// Cache of Arabic text → blob object URLs to avoid re-fetching
+import { getCachedAudio, setCachedAudio } from '@/utils/ttsCache'
+
+// Session-level L1 cache: text → blob URL
 const audioCache = new Map<string, string>()
 
 async function playViaAPI(text: string): Promise<void> {
-  if (!audioCache.has(text)) {
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+  // L1: in-memory blob URL
+  if (audioCache.has(text)) {
+    const audio = new Audio(audioCache.get(text)!)
+    audio.volume = 0.8
+    return new Promise((resolve) => {
+      audio.onended = () => resolve()
+      audio.onerror = () => resolve()
+      audio.play().catch(() => resolve())
     })
-    if (!res.ok) throw new Error(`TTS API ${res.status}`)
-    const blob = await res.blob()
-    audioCache.set(text, URL.createObjectURL(blob))
   }
-  const url = audioCache.get(text)!
+  // L2: persistent cache
+  const cached = await getCachedAudio(text)
+  if (cached) {
+    const url = URL.createObjectURL(new Blob([cached], { type: 'audio/mpeg' }))
+    audioCache.set(text, url)
+    const audio = new Audio(url)
+    audio.volume = 0.8
+    return new Promise((resolve) => {
+      audio.onended = () => resolve()
+      audio.onerror = () => resolve()
+      audio.play().catch(() => resolve())
+    })
+  }
+  // L3: fetch from API — store in both caches
+  const res = await fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  })
+  if (!res.ok) throw new Error(`TTS API ${res.status}`)
+  const buffer = await res.arrayBuffer()
+  setCachedAudio(text, buffer) // fire-and-forget persist
+  const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }))
+  audioCache.set(text, url)
   const audio = new Audio(url)
   audio.volume = 0.8
   return new Promise((resolve) => {
@@ -40,7 +65,6 @@ export async function speakArabic(text: string): Promise<void> {
     return
   } catch {
     // fall through to browser TTS
-    // (works in Capacitor WebView via Android's built-in TTS engine)
   }
   playViaBrowser(text)
 }

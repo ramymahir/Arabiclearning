@@ -25,6 +25,7 @@ interface AdaptiveStore {
   recordSpeakAttempt: (profileId: string, letterId: string, correct: boolean) => void
   getStats: (profileId: string) => LetterStat[]
   getWeakLetters: (profileId: string, limit?: number) => string[]
+  getLetterAccuracy: (profileId: string, letterId: string) => number
   resetProfile: (profileId: string) => void
 }
 
@@ -82,6 +83,12 @@ export const useAdaptiveStore = create<AdaptiveStore>()(
           .sort((a, b) => a.correct / a.attempts - b.correct / b.attempts)
           .slice(0, limit)
           .map((s) => s.letterId)
+      },
+
+      getLetterAccuracy(profileId, letterId) {
+        const stat = get().data[profileId]?.[letterId]
+        if (!stat || stat.attempts === 0) return 1.0
+        return stat.correct / stat.attempts
       },
 
       resetProfile(profileId) {

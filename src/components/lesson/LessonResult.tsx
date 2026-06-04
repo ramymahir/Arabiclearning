@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Confetti } from '@/components/ui/Confetti'
 import { useAudio } from '@/hooks/useAudio'
+import { getLetterById } from '@/data/letters'
 
 interface Props {
   stars: number
@@ -10,6 +11,8 @@ interface Props {
   lessonId: number
   leveledUp: boolean
   onRetry: () => void
+  sessionLetterWrongs?: Record<string, number>
+  lessonLetterIds?: string[]
 }
 
 const STAR_CONFIGS = [
@@ -19,7 +22,7 @@ const STAR_CONFIGS = [
   { emoji: '🎉', bg: 'from-amber-400 to-orange-500', title: '🎉 Perfect!', subtitle: 'Amazing job!' },
 ]
 
-export function LessonResult({ stars, xpEarned, lessonId, leveledUp, onRetry }: Props) {
+export function LessonResult({ stars, xpEarned, lessonId, leveledUp, onRetry, sessionLetterWrongs = {}, lessonLetterIds = [] }: Props) {
   const navigate = useNavigate()
   const { playSFX } = useAudio()
   const [showConfetti, setShowConfetti] = useState(false)
@@ -37,6 +40,13 @@ export function LessonResult({ stars, xpEarned, lessonId, leveledUp, onRetry }: 
 
   const clampedStars = Math.min(3, Math.max(0, stars))
   const config = STAR_CONFIGS[clampedStars]
+
+  const struggledLetters = lessonLetterIds
+    .filter((id) => (sessionLetterWrongs[id] ?? 0) > 0)
+    .sort((a, b) => (sessionLetterWrongs[b] ?? 0) - (sessionLetterWrongs[a] ?? 0))
+    .slice(0, 2)
+    .map((id) => getLetterById(id))
+    .filter(Boolean)
 
   return (
     <div className={`flex flex-col items-center justify-center min-h-[80vh] px-6 relative bg-gradient-to-b ${config.bg} pb-8`}>
@@ -114,6 +124,24 @@ export function LessonResult({ stars, xpEarned, lessonId, leveledUp, onRetry }: 
           className="bg-white/25 border-2 border-white/50 rounded-2xl px-6 py-3 mb-4 text-center"
         >
           <div className="text-2xl font-bold text-white">🎖️ LEVEL UP!</div>
+        </motion.div>
+      )}
+
+      {/* Noor tip card — shown only when the student struggled with specific letters */}
+      {struggledLetters.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.3 }}
+          className="w-full bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-2xl p-4 mb-2"
+        >
+          <p className="text-white font-bold text-sm mb-2">✨ Noor says:</p>
+          {struggledLetters.map((letter) => (
+            <div key={letter!.id} className="flex items-start gap-3 mb-1 last:mb-0">
+              <span className="text-2xl font-arabic text-white" dir="rtl">{letter!.arabic}</span>
+              <span className="text-white/80 text-sm">{letter!.phonemeDescription}</span>
+            </div>
+          ))}
         </motion.div>
       )}
 

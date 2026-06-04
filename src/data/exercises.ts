@@ -1,6 +1,8 @@
 import type { LessonExercise, Harakah } from '@/types'
 import { ARABIC_LETTERS, getLetterById } from './letters'
 
+export interface LetterMastery { accuracy: number; attempts: number }
+
 /**
  * Deterministic distractor selection seeded by correctId.
  * Returns `count` letter IDs from all 28 letters, excluding lessonLetterIds.
@@ -122,4 +124,86 @@ export function generateLessonExercises(
   })
 
   return exercises
+}
+
+/**
+ * Adapt a base exercise list based on per-letter mastery data.
+ * - known (accuracy ≥ 0.80, attempts ≥ 3): drop teach, keep speak
+ * - weak  (accuracy < 0.60, attempts ≥ 2): lead the lesson + extra listen_pick + speak at end
+ * - new / normal: unchanged
+ * Call once at lesson start with a snapshot of masteryMap to prevent
+ * mid-lesson re-adaptation as attempts accumulate.
+ */
+export function adaptExercises(
+  baseExercises: LessonExercise[],
+  masteryMap: Record<string, LetterMastery>,
+  lessonLetterIds: string[]
+): LessonExercise[] {
+  const classify = (id: string): 'known' | 'weak' | 'new' | 'normal' => {
+    const m = masteryMap[id]
+    if (!m || m.attempts === 0) return 'new'
+    if (m.accuracy >= 0.80 && m.attempts >= 3) return 'known'
+    if (m.accuracy < 0.60 && m.attempts >= 2) return 'weak'
+    return 'normal'
+  }
+
+  const weakIds = lessonLetterIds.filter((id) => classify(id) === 'weak')
+  const knownIds = lessonLetterIds.filter((id) => classify(id) === 'known')
+
+  if (weakIds.length === 0 && knownIds.length === 0) return baseExercises
+
+  const dragdropExercises = baseExercises.filter((e) => e.type === 'dragdrop')
+  const teachExercises = baseExercises.filter((e) => e.type === 'teach')
+  const speakExercises = baseExercises.filter((e) => e.type === 'speak')
+  const listenPickExercises = baseExercises.filter((e) => e.type === 'listen_pick')
+  const matchExercises = baseExercises.filter((e) => e.type === 'match')
+
+  const filteredTeach = teachExercises.filter((e) => !knownIds.includes(e.letterId))
+
+  const teachSpeakPairs: LessonExercise[] = []
+
+  // Weak letters first
+  for (const id of weakIds) {
+    const t = filteredTeach.find((e) => e.letterId === id)
+    const s = speakExercises.find((e) => e.letterId === id)
+    if (t) teachSpeakPairs.push(t)
+    if (s) teachSpeakPairs.push(s)
+  }
+  // Then remaining letters
+  for (const id of lessonLetterIds) {
+    if (weakIds.includes(id)) continue
+    const t = filteredTeach.find((e) => e.letterId === id)
+    const s = speakExercises.find((e) => e.letterId === id)
+    if (t) teachSpeakPairs.push(t)
+    if (s) teachSpeakPairs.push(s)
+  }
+
+  // Extra practice for weak letters after the main blocks
+  const extraExercises: LessonExercise[] = []
+  for (const id of weakIds) {
+    extraExercises.push({
+      id: `listen_pick_${id}_extra`,
+      type: 'listen_pick',
+      letterId: id,
+      correctAnswer: id,
+      distractors: getDistractors(id, lessonLetterIds),
+      promptText: 'Which letter do you hear?',
+    })
+    extraExercises.push({
+      id: `speak_${id}_extra`,
+      type: 'speak',
+      letterId: id,
+      correctAnswer: id,
+      distractors: [],
+      promptText: 'Say the letter again!',
+    })
+  }
+
+  return [
+    ...teachSpeakPairs,
+    ...listenPickExercises,
+    ...matchExercises,
+    ...extraExercises,
+    ...dragdropExercises,
+  ]
 }
