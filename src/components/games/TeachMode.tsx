@@ -23,8 +23,10 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
   const harakahInfo = HARAKAH_DESCRIPTIONS[harakah]
   const displayArabic = applyHarakah(letter.arabic, harakah)
 
+  const letterSound = applyHarakah(letter.arabic, harakah)
+
   useEffect(() => {
-    const t = setTimeout(() => playLetter(letter), 400)
+    const t = setTimeout(() => playLetter(letter, letterSound), 400)
     return () => clearTimeout(t)
   }, [letter.id])
 
@@ -62,7 +64,7 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
         <motion.button
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
-          onClick={() => playLetter(letter)}
+          onClick={() => playLetter(letter, letterSound)}
           className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold rounded-2xl px-6 py-3 text-xl shadow-lg"
         >
           🔊 Hear it!
@@ -85,7 +87,7 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
               key={form}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => playLetter(letter)}
+              onClick={() => playLetter(letter, letterSound)}
               className="bg-gray-50 rounded-2xl shadow-md p-3 flex flex-col items-center gap-1 border border-gray-100"
             >
               <span className="text-xs font-semibold text-gray-400 uppercase">

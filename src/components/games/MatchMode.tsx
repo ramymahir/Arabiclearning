@@ -42,8 +42,10 @@ export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }:
     )
   )
 
+  const letterSound = applyHarakah(correctLetter.arabic, harakah)
+
   useEffect(() => {
-    const t = setTimeout(() => playLetter(correctLetter), 200)
+    const t = setTimeout(() => playLetter(correctLetter, letterSound), 200)
     return () => clearTimeout(t)
   }, [exercise.id])
 
@@ -75,7 +77,7 @@ export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }:
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => playLetter(correctLetter)}
+        onClick={() => playLetter(correctLetter, letterSound)}
         className="w-44 h-44 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 shadow-xl flex flex-col items-center justify-center"
       >
         <span className="text-6xl font-arabic text-white leading-none" dir="rtl">

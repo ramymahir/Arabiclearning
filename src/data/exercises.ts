@@ -1,5 +1,6 @@
 import type { LessonExercise, Harakah } from '@/types'
 import { ARABIC_LETTERS, getLetterById } from './letters'
+import { getSentencesForLesson } from './sentences'
 
 export interface LetterMastery { accuracy: number; attempts: number }
 
@@ -122,6 +123,72 @@ export function generateLessonExercises(
     correctAnswer: letterIds.join(','),
     distractors: [],
   })
+
+  // ── Phase 5: word_listen — hear a word, pick correct Arabic spelling ──────
+  const wlLetter = getLetterById(letterIds[0])
+  if (wlLetter && wlLetter.examples.length > 0) {
+    const correctWord = wlLetter.examples[0]
+    const distractorWords = letterIds
+      .slice(1, 4)
+      .map((id) => getLetterById(id)?.examples[0]?.arabic)
+      .filter((w): w is string => !!w)
+    if (distractorWords.length >= 2) {
+      exercises.push({
+        id: `word_listen_${suffix}`,
+        type: 'word_listen',
+        letterId: letterIds[0],
+        promptText: 'Which word did you hear?',
+        correctAnswer: correctWord.arabic,
+        distractors: distractorWords,
+        wordExample: correctWord,
+      })
+    }
+  }
+
+  // ── Phase 6: word_match — see Arabic word + emoji, pick English meaning ──
+  const wmIdx = Math.min(1, letterIds.length - 1)
+  const wmLetter = getLetterById(letterIds[wmIdx])
+  if (wmLetter && wmLetter.examples.length > 0) {
+    const correctWord = wmLetter.examples[0]
+    const distractorMeanings = letterIds
+      .filter((_, i) => i !== wmIdx)
+      .slice(0, 3)
+      .map((id) => getLetterById(id)?.examples[0]?.meaning)
+      .filter((m): m is string => !!m)
+    if (distractorMeanings.length >= 2) {
+      exercises.push({
+        id: `word_match_${suffix}`,
+        type: 'word_match',
+        letterId: letterIds[wmIdx],
+        promptText: 'What does this word mean?',
+        correctAnswer: correctWord.meaning,
+        distractors: distractorMeanings,
+        wordExample: correctWord,
+      })
+    }
+  }
+
+  // ── Phase 7: sentence_read — only for review lessons (17-19) ─────────────
+  if (lessonId !== undefined && lessonId >= 17) {
+    const sentences = getSentencesForLesson(lessonId).slice(0, 3)
+    for (const sentence of sentences) {
+      const allMeanings = getSentencesForLesson(lessonId).map((s) => s.meaning)
+      const distractors = allMeanings
+        .filter((m) => m !== sentence.meaning)
+        .slice(0, 3)
+      if (distractors.length >= 2) {
+        exercises.push({
+          id: `sentence_read_${sentence.id}`,
+          type: 'sentence_read',
+          letterId: letterIds[0],
+          promptText: 'What does this sentence mean?',
+          correctAnswer: sentence.meaning,
+          distractors,
+          sentence,
+        })
+      }
+    }
+  }
 
   return exercises
 }

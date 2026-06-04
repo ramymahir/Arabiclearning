@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Lesson, LessonExercise } from '@/types'
@@ -9,6 +9,8 @@ import { useAdaptiveStore } from '@/store/adaptiveStore'
 import { useOnboardingStore } from '@/store/onboardingStore'
 import { getLetterById } from '@/data/letters'
 import { adaptExercises, type LetterMastery } from '@/data/exercises'
+import { applyHarakah } from '@/utils/arabic'
+import { audioManager } from '@/audio/audioManager'
 import { getTeacherFeedback, type TeacherFeedback } from '@/ai/teacherAgent'
 import { ExerciseProgress } from './ExerciseProgress'
 import { LessonIntro } from './LessonIntro'
@@ -19,6 +21,9 @@ import { ListenPickMode } from '@/components/games/ListenPickMode'
 import { MatchMode } from '@/components/games/MatchMode'
 import { DragDropMode } from '@/components/games/DragDropMode'
 import { SpeakMode } from '@/components/games/SpeakMode'
+import { WordListenMode } from '@/components/games/WordListenMode'
+import { WordMatchMode } from '@/components/games/WordMatchMode'
+import { SentenceReadMode } from '@/components/games/SentenceReadMode'
 import { HeartBar } from '@/components/ui/HeartBar'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -172,6 +177,17 @@ export function LessonScreen({ lesson }: Props) {
     endSession()
   }
 
+  // Warm TTS cache while child reads the intro card
+  useEffect(() => {
+    const texts = lesson.letterIds
+      .map((id) => {
+        const l = getLetterById(id)
+        return l ? applyHarakah(l.arabic, lesson.harakah) : null
+      })
+      .filter(Boolean) as string[]
+    audioManager.preloadLetters(texts)
+  }, [lesson.id])
+
   if (phase === 'intro') {
     return <LessonIntro lesson={lesson} onStart={handleStart} />
   }
@@ -259,6 +275,30 @@ export function LessonScreen({ lesson }: Props) {
               <DragDropMode
                 exercise={currentExercise}
                 harakah={lesson.harakah}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'word_listen' && (
+              <WordListenMode
+                exercise={currentExercise}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'word_match' && (
+              <WordMatchMode
+                exercise={currentExercise}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'sentence_read' && currentExercise.sentence && (
+              <SentenceReadMode
+                exercise={currentExercise}
                 onCorrect={handleCorrect}
                 onWrong={handleWrong}
                 onContinue={handleContinue}

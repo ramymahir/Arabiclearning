@@ -3,8 +3,8 @@ import { audioManager } from '@/audio/audioManager'
 import type { ArabicLetter, WordExample } from '@/types'
 
 export function useAudio() {
-  const playLetter = useCallback((letter: ArabicLetter) => {
-    audioManager.playLetter(letter.audioFile, letter.ttsFallback)
+  const playLetter = useCallback((letter: ArabicLetter, ttsOverride?: string) => {
+    audioManager.playLetter(letter.audioFile, ttsOverride ?? letter.ttsFallback)
   }, [])
 
   const playWord = useCallback((word: WordExample) => {

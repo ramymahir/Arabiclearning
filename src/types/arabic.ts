@@ -38,7 +38,24 @@ export interface ArabicLetter {
   order: number
 }
 
-export type ExerciseType = 'teach' | 'listen_pick' | 'match' | 'dragdrop' | 'speak'
+export type ExerciseType =
+  | 'teach'
+  | 'listen_pick'
+  | 'match'
+  | 'dragdrop'
+  | 'speak'
+  | 'word_listen'    // hear a word, pick the correct Arabic written form
+  | 'word_match'     // see Arabic word + emoji, match to English meaning
+  | 'sentence_read'  // tap words in sentence to hear them, pick overall meaning
+
+export interface ArabicSentence {
+  id: string
+  arabic: string
+  transliteration: string
+  meaning: string
+  emoji: string
+  lessonIntroduced: number
+}
 
 export interface LessonExercise {
   id: string
@@ -48,6 +65,7 @@ export interface LessonExercise {
   correctAnswer: string
   distractors: string[]
   wordExample?: WordExample
+  sentence?: ArabicSentence
 }
 
 export interface LessonUnit {

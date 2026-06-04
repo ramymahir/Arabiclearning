@@ -51,9 +51,17 @@ class AudioManager {
     if (audioFile) this.backgroundLoad(audioFile)
   }
 
-  private async playAI(text: string): Promise<void> {
+  /** Fetch + cache TTS audio for a list of texts without playing them. */
+  preloadLetters(texts: string[]): void {
+    for (const text of texts) {
+      if (!this.aiTtsCache.has(text)) this.playAI(text, true)
+    }
+  }
+
+  private async playAI(text: string, silent = false): Promise<void> {
     // L1: in-memory blob URL (session cache)
     if (this.aiTtsCache.has(text)) {
+      if (silent) return
       const audio = new Audio(this.aiTtsCache.get(text)!)
       audio.volume = 0.8
       audio.play().catch(() => this.ttsSpeak(text))
@@ -64,6 +72,7 @@ class AudioManager {
     if (cached) {
       const url = URL.createObjectURL(new Blob([cached], { type: 'audio/mpeg' }))
       this.aiTtsCache.set(text, url)
+      if (silent) return
       const audio = new Audio(url)
       audio.volume = 0.8
       audio.play().catch(() => this.ttsSpeak(text))
@@ -81,11 +90,12 @@ class AudioManager {
       setCachedAudio(text, buffer) // fire-and-forget persist
       const url = URL.createObjectURL(new Blob([buffer], { type: 'audio/mpeg' }))
       this.aiTtsCache.set(text, url)
+      if (silent) return
       const audio = new Audio(url)
       audio.volume = 0.8
       audio.play().catch(() => this.ttsSpeak(text))
     } catch {
-      this.ttsSpeak(text)
+      if (!silent) this.ttsSpeak(text)
     }
   }
 

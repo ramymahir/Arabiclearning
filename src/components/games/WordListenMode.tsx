@@ -1,68 +1,54 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { LessonExercise, AnswerResult } from '@/types'
-import { getLetterById, getLettersByIds } from '@/data/letters'
+import { audioManager } from '@/audio/audioManager'
 import { AnswerFeedback } from './AnswerFeedback'
-import { useAudio } from '@/hooks/useAudio'
 import { shuffle } from '@/utils/shuffle'
-import { applyHarakah } from '@/utils/arabic'
-import type { Harakah } from '@/types'
 
 interface Props {
   exercise: LessonExercise
-  harakah: Harakah
   onCorrect: () => void
   onWrong: () => void
   onContinue: () => void
 }
 
-// Per-option color themes (unselected, correct, wrong)
 const OPTION_COLORS = [
-  { base: 'bg-amber-100 border-amber-300 text-amber-800', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
-  { base: 'bg-sky-100 border-sky-300 text-sky-800', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
-  { base: 'bg-violet-100 border-violet-300 text-violet-800', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
-  { base: 'bg-emerald-100 border-emerald-300 text-emerald-800', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
+  { base: 'bg-amber-100 border-amber-300 text-amber-900', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
+  { base: 'bg-sky-100 border-sky-300 text-sky-900', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
+  { base: 'bg-violet-100 border-violet-300 text-violet-900', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
+  { base: 'bg-emerald-100 border-emerald-300 text-emerald-900', correct: 'bg-emerald-400 border-emerald-500 text-white', wrong: 'bg-rose-400 border-rose-500 text-white' },
 ]
 
-export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContinue }: Props) {
-  const { playLetter, playSFX } = useAudio()
+export function WordListenMode({ exercise, onCorrect, onWrong, onContinue }: Props) {
   const [result, setResult] = useState<AnswerResult>('pending')
   const [selected, setSelected] = useState<string | null>(null)
   const [played, setPlayed] = useState(false)
 
-  const correctLetter = getLetterById(exercise.correctAnswer)!
-  const [allOptions] = useState(() =>
+  const word = exercise.wordExample!
+  const [options] = useState(() =>
     shuffle([exercise.correctAnswer, ...exercise.distractors.slice(0, 3)])
   )
-  const optionLetters = getLettersByIds(allOptions)
 
-  const letterSound = applyHarakah(correctLetter.arabic, harakah)
-
-  useEffect(() => {
-    if (correctLetter) {
-      const t = setTimeout(() => {
-        playLetter(correctLetter, letterSound)
-        setPlayed(true)
-      }, 400)
-      return () => clearTimeout(t)
-    }
-  }, [exercise.id])
-
-  const handlePlay = () => {
-    playLetter(correctLetter, letterSound)
+  const playWord = () => {
+    audioManager.playWord(word.audioFile, word.arabic)
     setPlayed(true)
   }
 
-  const handleSelect = (letterId: string) => {
+  useEffect(() => {
+    const t = setTimeout(playWord, 400)
+    return () => clearTimeout(t)
+  }, [exercise.id])
+
+  const handleSelect = (option: string) => {
     if (result !== 'pending') return
-    setSelected(letterId)
-    if (letterId === exercise.correctAnswer) {
+    setSelected(option)
+    if (option === exercise.correctAnswer) {
       setResult('correct')
-      playSFX('correct')
+      audioManager.playSFX('correct')
       onCorrect()
     } else {
       setResult('wrong')
-      playSFX('wrong')
+      audioManager.playSFX('wrong')
       onWrong()
     }
   }
@@ -70,16 +56,16 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
   return (
     <div className="max-w-sm mx-auto flex flex-col items-center px-4 pt-4 pb-36 gap-6">
       <div className="text-center font-bold text-gray-600 text-xl">
-        What letter makes this sound?
+        Which word did you hear?
       </div>
 
       {/* Speaker button */}
       <div className="flex flex-col items-center gap-3">
         <motion.button
-          onClick={handlePlay}
+          onClick={playWord}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
-          className="w-[100px] h-[100px] rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-xl shadow-sky-300/40"
+          className="w-[100px] h-[100px] rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center shadow-xl shadow-teal-300/40"
         >
           <motion.span
             className="text-5xl"
@@ -89,23 +75,24 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
             🔊
           </motion.span>
         </motion.button>
+        <div className="text-4xl">{word.emoji}</div>
         {played && (
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-sm text-gray-500 font-medium"
           >
-            Tap to hear again 🔊
+            Tap to hear again
           </motion.p>
         )}
       </div>
 
-      {/* 2×2 option grid */}
+      {/* 2×2 Arabic word options */}
       <div className="grid grid-cols-2 gap-3 w-full">
-        {optionLetters.map((letter, idx) => {
+        {options.map((option, idx) => {
           const theme = OPTION_COLORS[idx % OPTION_COLORS.length]
-          const isSelected = selected === letter.id
-          const isCorrect = letter.id === exercise.correctAnswer
+          const isSelected = selected === option
+          const isCorrect = option === exercise.correctAnswer
           const showCorrect = isSelected && result === 'correct'
           const showWrong = isSelected && result === 'wrong'
           const revealCorrect = !isSelected && isCorrect && result === 'wrong'
@@ -117,7 +104,7 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
 
           return (
             <motion.button
-              key={letter.id}
+              key={option}
               initial={{ opacity: 0, y: 20 }}
               animate={{
                 opacity: 1,
@@ -126,19 +113,14 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
                 x: showWrong ? [0, -8, 8, -6, 6, 0] : 0,
               }}
               transition={{ delay: idx * 0.08 }}
-              whileHover={result === 'pending' ? { scale: 1.05 } : {}}
+              whileHover={result === 'pending' ? { scale: 1.04 } : {}}
               whileTap={result === 'pending' ? { scale: 0.95 } : {}}
-              onClick={() => handleSelect(letter.id)}
+              onClick={() => handleSelect(option)}
               disabled={result !== 'pending'}
-              className={`
-                rounded-2xl p-6 flex flex-col items-center justify-center min-h-[100px]
-                border-2 shadow-lg transition-all font-bold
-                ${colorClass}
-              `}
+              className={`rounded-2xl p-5 flex items-center justify-center min-h-[80px] border-2 shadow-lg transition-all font-arabic text-3xl ${colorClass}`}
+              dir="rtl"
             >
-              <span className="text-5xl font-arabic" dir="rtl">
-                {applyHarakah(letter.arabic, harakah)}
-              </span>
+              {option}
             </motion.button>
           )
         })}
@@ -146,7 +128,7 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
 
       <AnswerFeedback
         result={result}
-        correctText={applyHarakah(correctLetter.arabic, harakah)}
+        correctText={`${word.arabic} — ${word.meaning}`}
         onContinue={onContinue}
       />
     </div>
