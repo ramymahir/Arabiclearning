@@ -7,6 +7,7 @@ import { useAudio } from '@/hooks/useAudio'
 import { shuffle } from '@/utils/shuffle'
 import { applyHarakah } from '@/utils/arabic'
 import type { Harakah } from '@/types'
+import { getTeacherFeedback } from '@/ai/teacherAgent'
 
 interface Props {
   exercise: LessonExercise
@@ -29,6 +30,7 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
   const [result, setResult] = useState<AnswerResult>('pending')
   const [selected, setSelected] = useState<string | null>(null)
   const [played, setPlayed] = useState(false)
+  const [teacherHint, setTeacherHint] = useState<string | null>(null)
 
   const correctLetter = getLetterById(exercise.correctAnswer)!
   const [allOptions] = useState(() =>
@@ -64,6 +66,17 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
       setResult('wrong')
       playSFX('wrong')
       onWrong()
+      getTeacherFeedback({
+        letterId: exercise.correctAnswer,
+        letterArabic: correctLetter.arabic,
+        transliteration: correctLetter.transliteration,
+        phonemeDescription: correctLetter.phonemeDescription,
+        childAttempt: '',
+        exerciseType: 'listen_pick',
+        previousAttempts: 0,
+        weakLetters: [],
+        sessionWrongCount: 1,
+      }).then(fb => setTeacherHint(fb.hint)).catch(() => {})
     }
   }
 
@@ -149,6 +162,16 @@ export function ListenPickMode({ exercise, harakah, onCorrect, onWrong, onContin
         correctText={applyHarakah(correctLetter.arabic, harakah)}
         onContinue={onContinue}
       />
+
+      {teacherHint && result === 'wrong' && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full bg-blue-50 rounded-2xl p-3 text-center border border-blue-200"
+        >
+          <p className="text-blue-700 text-sm font-medium">💡 {teacherHint}</p>
+        </motion.div>
+      )}
     </div>
   )
 }

@@ -83,7 +83,7 @@ class AudioManager {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, role: 'letter' }),
       })
       if (!res.ok) throw new Error(`TTS ${res.status}`)
       const buffer = await res.arrayBuffer()

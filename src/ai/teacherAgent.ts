@@ -47,6 +47,10 @@ const FALLBACK_RESPONSES: TeacherFeedback[] = [
   },
 ]
 
+function cacheKey(ctx: TeacherContext): string {
+  return `noor_teach_${ctx.letterId}_${ctx.exerciseType}`
+}
+
 export async function getTeacherFeedback(ctx: TeacherContext): Promise<TeacherFeedback> {
   try {
     const res = await fetch('/api/teacher', {
@@ -54,13 +58,24 @@ export async function getTeacherFeedback(ctx: TeacherContext): Promise<TeacherFe
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(ctx),
     })
-    if (!res.ok) return pickFallback(ctx)
+    if (!res.ok) return getCachedOrFallback(ctx)
     const data = await res.json()
-    if (data.arabicMessage && data.englishMessage) return data as TeacherFeedback
-    return pickFallback(ctx)
+    if (data.arabicMessage && data.englishMessage) {
+      try { localStorage.setItem(cacheKey(ctx), JSON.stringify(data)) } catch {}
+      return data as TeacherFeedback
+    }
+    return getCachedOrFallback(ctx)
   } catch {
-    return pickFallback(ctx)
+    return getCachedOrFallback(ctx)
   }
+}
+
+function getCachedOrFallback(ctx: TeacherContext): TeacherFeedback {
+  try {
+    const cached = localStorage.getItem(cacheKey(ctx))
+    if (cached) return JSON.parse(cached) as TeacherFeedback
+  } catch {}
+  return pickFallback(ctx)
 }
 
 function pickFallback(ctx: TeacherContext): TeacherFeedback {
