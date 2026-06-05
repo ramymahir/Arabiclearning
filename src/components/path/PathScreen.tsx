@@ -11,10 +11,10 @@ import { PathNode } from './PathNode'
 
 type Track = 'letters' | 'words' | 'sentences'
 
-const TRACK_INFO: Record<Track, { label: string; emoji: string; desc: string }> = {
-  letters: { label: 'Letters', emoji: '🔤', desc: 'Learn the 28 Arabic letters and their sounds' },
-  words:   { label: 'Words',   emoji: '📖', desc: 'Read real Arabic words from the textbook' },
-  sentences: { label: 'Sentences', emoji: '📜', desc: 'Read full Arabic phrases and sentences' },
+const TRACK_INFO: Record<Track, { label: string; arabic: string; emoji: string; desc: string }> = {
+  letters:   { label: 'Letters',   arabic: 'الحروف',  emoji: '🔤', desc: 'Learn the 28 Arabic letters and their sounds' },
+  words:     { label: 'Words',     arabic: 'الكلمات', emoji: '📖', desc: 'Read real Arabic words from the textbook' },
+  sentences: { label: 'Sentences', arabic: 'الجُمَل', emoji: '📜', desc: 'Read full Arabic phrases and sentences' },
 }
 
 const POSITIONS = ['center', 'right', 'center', 'left', 'center'] as const
@@ -69,8 +69,11 @@ export function PathScreen() {
               `}
             >
               <span className="text-xl leading-none">{info.emoji}</span>
-              <span className={`text-xs font-bold ${activeTrack === track ? 'text-white' : 'text-gray-600'}`}>
+              <span className={`text-xs font-bold leading-tight ${activeTrack === track ? 'text-white' : 'text-gray-600'}`}>
                 {info.label}
+              </span>
+              <span className={`text-xs font-arabic leading-tight ${activeTrack === track ? 'text-white/80' : 'text-gray-400'}`}>
+                {info.arabic}
               </span>
             </motion.button>
           ))}
