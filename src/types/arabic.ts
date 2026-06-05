@@ -48,6 +48,9 @@ export type ExerciseType =
   | 'word_listen'    // hear a word, pick the correct Arabic written form
   | 'word_match'     // see Arabic word + emoji, match to English meaning
   | 'sentence_read'  // tap words in sentence to hear them, pick overall meaning
+  | 'harakah_pick'   // play a voweled letter sound, identify the harakah mark
+  | 'pick_letter'    // see a word with missing first letter, pick it from 4 options
+  | 'word_build'     // hear a word, tap letter tiles in order to spell it
 
 export interface ArabicSentence {
   id: string
@@ -67,6 +70,7 @@ export interface LessonExercise {
   distractors: string[]
   wordExample?: WordExample
   sentence?: ArabicSentence
+  wordHint?: string   // for pick_letter: the word with first letter replaced by placeholder
 }
 
 export interface LessonUnit {

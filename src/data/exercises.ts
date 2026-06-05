@@ -1,7 +1,7 @@
 import type { LessonExercise, Harakah } from '@/types'
 import { ARABIC_LETTERS, getLetterById } from './letters'
 import { getSentencesForLesson } from './sentences'
-import { getExampleByHarakah } from '@/utils/arabic'
+import { getExampleByHarakah, splitArabicWord } from '@/utils/arabic'
 
 export interface LetterMastery { accuracy: number; attempts: number }
 
@@ -10,13 +10,11 @@ export interface LetterMastery { accuracy: number; attempts: number }
  * Returns `count` letter IDs from all 28 letters, excluding lessonLetterIds.
  */
 function getDistractors(correctId: string, lessonLetterIds: string[], count = 3): string[] {
-  // Prefer letters outside this lesson first, then fall back to other lesson letters
   const outsideLesson = ARABIC_LETTERS.filter((l) => !lessonLetterIds.includes(l.id))
   const insideLesson = ARABIC_LETTERS.filter(
     (l) => lessonLetterIds.includes(l.id) && l.id !== correctId
   )
 
-  // Deterministic shuffle seeded by correctId to avoid hydration mismatches
   const seed = correctId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
   const deterministicSort = (arr: typeof ARABIC_LETTERS) =>
     [...arr].sort((a, b) => {
@@ -33,7 +31,6 @@ function getDistractors(correctId: string, lessonLetterIds: string[], count = 3)
     result.push(l.id)
   }
 
-  // Fallback: fill from any letter not already picked
   while (result.length < count) {
     const fallback = ARABIC_LETTERS.find(
       (l) => l.id !== correctId && !result.includes(l.id)
@@ -45,24 +42,29 @@ function getDistractors(correctId: string, lessonLetterIds: string[], count = 3)
   return result.slice(0, count)
 }
 
-/**
- * Generate exercises for a lesson following this exact pattern:
- *
- * For each letter (in order):
- *   1. teach  — show the letter
- *   2. speak  — "Say the letter!" (immediately after teach)
- *
- * Then after ALL letters have been taught+spoken:
- *   3. listen_pick per letter — hear → pick from 4 choices
- *   4. match per letter       — see letter → pick word
- *   5. dragdrop (one total)   — drag all letters to their words
- */
 export function generateLessonExercises(
   letterIds: string[],
   harakah: Harakah,
   lessonId?: number
 ): LessonExercise[] {
   const exercises: LessonExercise[] = []
+  const suffix = lessonId !== undefined ? String(lessonId) : 'all'
+
+  // ── Phase 0: harakah_pick — for kasra/damma/sukun lessons ─────────────────
+  if (harakah === 'kasra' || harakah === 'damma' || harakah === 'sukun') {
+    const allHarakah = ['fatha', 'kasra', 'damma', 'sukun']
+    const hpLetters = letterIds.slice(0, 3)
+    for (const id of hpLetters) {
+      exercises.push({
+        id: `harakah_pick_${id}`,
+        type: 'harakah_pick',
+        letterId: id,
+        correctAnswer: harakah,
+        distractors: allHarakah.filter((h) => h !== harakah).slice(0, 3),
+        promptText: 'Which mark do you hear?',
+      })
+    }
+  }
 
   // ── Phase 1: teach + speak pairs (one per letter, in order) ──────────────
   for (let i = 0; i < letterIds.length; i++) {
@@ -78,7 +80,6 @@ export function generateLessonExercises(
       distractors: [],
     })
 
-    // speak immediately follows teach — no heart penalty, just voice practice
     exercises.push({
       id: `speak_${id}_${i}`,
       type: 'speak',
@@ -89,7 +90,7 @@ export function generateLessonExercises(
     })
   }
 
-  // ── Phase 2: listen_pick — one per letter (in original order) ────────────
+  // ── Phase 2: listen_pick — one per letter ─────────────────────────────────
   for (const id of letterIds) {
     exercises.push({
       id: `listen_${id}`,
@@ -101,7 +102,7 @@ export function generateLessonExercises(
     })
   }
 
-  // ── Phase 3: match — one per letter (in original order) ──────────────────
+  // ── Phase 3: match — one per letter ──────────────────────────────────────
   for (const id of letterIds) {
     const letter = getLetterById(id)
     if (!letter || letter.examples.length === 0) continue
@@ -115,8 +116,34 @@ export function generateLessonExercises(
     })
   }
 
+  // ── Phase 3.5: pick_letter — fill-in-blank, 2 per lesson (lesson 2+) ─────
+  if (letterIds.length >= 2) {
+    const plLetters = letterIds.slice(0, 2)
+    for (const id of plLetters) {
+      const letter = getLetterById(id)
+      if (!letter) continue
+      const ex = getExampleByHarakah(letter, harakah)
+      // Split off the first grapheme cluster (base letter + any harakah)
+      const segments = splitArabicWord(ex.arabic)
+      if (segments.length < 2) continue
+      // Blank = first segment's harakah marks only (no base letter) + rest of word
+      const firstSegment = segments[0]
+      const harakahMarks = firstSegment.slice(letter.arabic.length)
+      const blankedWord = '_' + harakahMarks + ex.arabic.slice(firstSegment.length)
+      exercises.push({
+        id: `pick_letter_${id}`,
+        type: 'pick_letter',
+        letterId: id,
+        correctAnswer: id,
+        distractors: getDistractors(id, letterIds, 3),
+        wordExample: ex,
+        wordHint: blankedWord,
+        promptText: 'Which letter completes the word?',
+      })
+    }
+  }
+
   // ── Phase 4: one dragdrop for the whole lesson ───────────────────────────
-  const suffix = lessonId !== undefined ? String(lessonId) : 'all'
   exercises.push({
     id: `dragdrop_${suffix}`,
     type: 'dragdrop',
@@ -125,19 +152,23 @@ export function generateLessonExercises(
     distractors: [],
   })
 
-  // ── Phase 5: word_listen — hear a word, pick correct Arabic spelling ──────
-  const wlLetter = getLetterById(letterIds[0])
-  if (wlLetter && wlLetter.examples.length > 0) {
+  // ── Phase 5: word_listen — up to 4 exercises (one per letter) ────────────
+  const wlCount = Math.min(4, letterIds.length)
+  for (let i = 0; i < wlCount; i++) {
+    const wlLetter = getLetterById(letterIds[i])
+    if (!wlLetter || wlLetter.examples.length === 0) continue
     const correctWord = getExampleByHarakah(wlLetter, harakah)
     const distractorWords = letterIds
-      .slice(1, 4)
+      .filter((_, idx) => idx !== i)
+      .slice(0, 4)
       .map((id) => { const l = getLetterById(id); return l ? getExampleByHarakah(l, harakah).arabic : undefined })
-      .filter((w): w is string => !!w)
+      .filter((w): w is string => !!w && w !== correctWord.arabic)
+      .slice(0, 3)
     if (distractorWords.length >= 2) {
       exercises.push({
-        id: `word_listen_${suffix}`,
+        id: `word_listen_${suffix}_${i}`,
         type: 'word_listen',
-        letterId: letterIds[0],
+        letterId: letterIds[i],
         promptText: 'Which word did you hear?',
         correctAnswer: correctWord.arabic,
         distractors: distractorWords,
@@ -146,21 +177,23 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 6: word_match — see Arabic word + emoji, pick English meaning ──
-  const wmIdx = Math.min(1, letterIds.length - 1)
-  const wmLetter = getLetterById(letterIds[wmIdx])
-  if (wmLetter && wmLetter.examples.length > 0) {
+  // ── Phase 6: word_match — up to 4 exercises ───────────────────────────────
+  const wmCount = Math.min(4, letterIds.length)
+  for (let i = 0; i < wmCount; i++) {
+    const wmLetter = getLetterById(letterIds[i])
+    if (!wmLetter || wmLetter.examples.length === 0) continue
     const correctWord = getExampleByHarakah(wmLetter, harakah)
     const distractorMeanings = letterIds
-      .filter((_, i) => i !== wmIdx)
-      .slice(0, 3)
+      .filter((_, idx) => idx !== i)
+      .slice(0, 4)
       .map((id) => { const l = getLetterById(id); return l ? getExampleByHarakah(l, harakah).meaning : undefined })
-      .filter((m): m is string => !!m)
+      .filter((m): m is string => !!m && m !== correctWord.meaning)
+      .slice(0, 3)
     if (distractorMeanings.length >= 2) {
       exercises.push({
-        id: `word_match_${suffix}`,
+        id: `word_match_${suffix}_${i}`,
         type: 'word_match',
-        letterId: letterIds[wmIdx],
+        letterId: letterIds[i],
         promptText: 'What does this word mean?',
         correctAnswer: correctWord.meaning,
         distractors: distractorMeanings,
@@ -169,11 +202,29 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 7: sentence_read — only for review lessons (17-19) ─────────────
-  if (lessonId !== undefined && lessonId >= 17) {
-    const sentences = getSentencesForLesson(lessonId).slice(0, 3)
+  // ── Phase 7: word_build — spell the word (lesson 4+) ─────────────────────
+  if (letterIds.length >= 4) {
+    const wbLetter = getLetterById(letterIds[0])
+    if (wbLetter && wbLetter.examples.length > 0) {
+      const wbWord = getExampleByHarakah(wbLetter, harakah)
+      exercises.push({
+        id: `word_build_${suffix}`,
+        type: 'word_build',
+        letterId: letterIds[0],
+        correctAnswer: wbWord.arabic,
+        distractors: getDistractors(letterIds[0], letterIds, 2).slice(0, 2),
+        wordExample: wbWord,
+        promptText: 'Spell the word!',
+      })
+    }
+  }
+
+  // ── Phase 8: sentence_read — from lesson 9; up to 2 early, up to 4 review ─
+  if (lessonId !== undefined && lessonId >= 9) {
+    const maxSentences = lessonId >= 17 ? 4 : 2
+    const sentences = getSentencesForLesson(lessonId).slice(0, maxSentences)
+    const allMeanings = getSentencesForLesson(lessonId).map((s) => s.meaning)
     for (const sentence of sentences) {
-      const allMeanings = getSentencesForLesson(lessonId).map((s) => s.meaning)
       const distractors = allMeanings
         .filter((m) => m !== sentence.meaning)
         .slice(0, 3)
@@ -199,8 +250,6 @@ export function generateLessonExercises(
  * - known (accuracy ≥ 0.80, attempts ≥ 3): drop teach, keep speak
  * - weak  (accuracy < 0.60, attempts ≥ 2): lead the lesson + extra listen_pick + speak at end
  * - new / normal: unchanged
- * Call once at lesson start with a snapshot of masteryMap to prevent
- * mid-lesson re-adaptation as attempts accumulate.
  */
 export function adaptExercises(
   baseExercises: LessonExercise[],
@@ -230,14 +279,12 @@ export function adaptExercises(
 
   const teachSpeakPairs: LessonExercise[] = []
 
-  // Weak letters first
   for (const id of weakIds) {
     const t = filteredTeach.find((e) => e.letterId === id)
     const s = speakExercises.find((e) => e.letterId === id)
     if (t) teachSpeakPairs.push(t)
     if (s) teachSpeakPairs.push(s)
   }
-  // Then remaining letters
   for (const id of lessonLetterIds) {
     if (weakIds.includes(id)) continue
     const t = filteredTeach.find((e) => e.letterId === id)
@@ -246,7 +293,6 @@ export function adaptExercises(
     if (s) teachSpeakPairs.push(s)
   }
 
-  // Extra practice for weak letters after the main blocks
   const extraExercises: LessonExercise[] = []
   for (const id of weakIds) {
     extraExercises.push({

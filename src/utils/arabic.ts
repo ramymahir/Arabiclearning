@@ -29,6 +29,31 @@ export function getExampleByHarakah(letter: ArabicLetter, harakah: Harakah): Wor
   )
 }
 
+/**
+ * Splits an Arabic word into an array of letter+harakah grapheme pairs.
+ * e.g. 'بَيْت' → ['بَ', 'يْ', 'ت']
+ */
+export function splitArabicWord(word: string): string[] {
+  const segments: string[] = []
+  let current = ''
+  for (const char of word) {
+    const code = char.codePointAt(0) ?? 0
+    // Arabic combining marks: U+0610-U+061A (extended), U+064B-U+065F (harakah/shadda), U+0670 (superscript alef)
+    const isCombining =
+      (code >= 0x0610 && code <= 0x061a) ||
+      (code >= 0x064b && code <= 0x065f) ||
+      code === 0x0670
+    if (isCombining) {
+      current += char
+    } else {
+      if (current) segments.push(current)
+      current = char
+    }
+  }
+  if (current) segments.push(current)
+  return segments
+}
+
 export const HARAKAH_DESCRIPTIONS: Record<Harakah, { ar: string; en: string; sound: string }> = {
   fatha: { ar: 'فَتْحَة', en: 'Fatha', sound: 'a' },
   kasra: { ar: 'كَسْرَة', en: 'Kasra', sound: 'i' },

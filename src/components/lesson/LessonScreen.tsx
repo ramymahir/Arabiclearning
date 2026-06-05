@@ -24,6 +24,9 @@ import { SpeakMode } from '@/components/games/SpeakMode'
 import { WordListenMode } from '@/components/games/WordListenMode'
 import { WordMatchMode } from '@/components/games/WordMatchMode'
 import { SentenceReadMode } from '@/components/games/SentenceReadMode'
+import { HarakahPickMode } from '@/components/games/HarakahPickMode'
+import { PickLetterMode } from '@/components/games/PickLetterMode'
+import { WordBuildMode } from '@/components/games/WordBuildMode'
 import { HeartBar } from '@/components/ui/HeartBar'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -299,6 +302,33 @@ export function LessonScreen({ lesson }: Props) {
             {currentExercise.type === 'sentence_read' && currentExercise.sentence && (
               <SentenceReadMode
                 exercise={currentExercise}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'harakah_pick' && (
+              <HarakahPickMode
+                exercise={currentExercise}
+                harakah={lesson.harakah}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'pick_letter' && (
+              <PickLetterMode
+                exercise={currentExercise}
+                harakah={lesson.harakah}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'word_build' && (
+              <WordBuildMode
+                exercise={currentExercise}
+                harakah={lesson.harakah}
                 onCorrect={handleCorrect}
                 onWrong={handleWrong}
                 onContinue={handleContinue}
