@@ -82,6 +82,7 @@ export interface LessonUnit {
   bgColor: string
   textColor: string
   lessons: number[]
+  track: 'letters' | 'words' | 'sentences'
 }
 
 export interface Lesson {

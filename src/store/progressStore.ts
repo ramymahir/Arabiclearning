@@ -50,10 +50,8 @@ export const useProgressStore = create<ProgressStore>()(
         return get().getProgress(profileId).lessons[lessonId] ?? null
       },
 
-      isLessonUnlocked(profileId, lessonId) {
-        if (lessonId === 1) return true
-        const prev = get().getLessonProgress(profileId, lessonId - 1)
-        return prev !== null && prev.stars >= 1
+      isLessonUnlocked(_profileId, _lessonId) {
+        return true
       },
 
       completeLesson(profileId, lessonId, wrongCount) {

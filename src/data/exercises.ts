@@ -1,7 +1,9 @@
 import type { LessonExercise, Harakah } from '@/types'
 import { ARABIC_LETTERS, getLetterById } from './letters'
-import { getSentencesForLesson } from './sentences'
+import { SENTENCES, getSentencesForLesson } from './sentences'
 import { getExampleByHarakah, splitArabicWord } from '@/utils/arabic'
+
+export type ExerciseMode = 'letters' | 'words' | 'sentences'
 
 export interface LetterMastery { accuracy: number; attempts: number }
 
@@ -45,13 +47,36 @@ function getDistractors(correctId: string, lessonLetterIds: string[], count = 3)
 export function generateLessonExercises(
   letterIds: string[],
   harakah: Harakah,
-  lessonId?: number
+  lessonId?: number,
+  mode: ExerciseMode = 'letters'
 ): LessonExercise[] {
   const exercises: LessonExercise[] = []
   const suffix = lessonId !== undefined ? String(lessonId) : 'all'
 
-  // ── Phase 0: harakah_pick — for kasra/damma/sukun lessons ─────────────────
-  if (harakah === 'kasra' || harakah === 'damma' || harakah === 'sukun') {
+  // ── Sentences mode: offset-based sentence_read only ───────────────────────
+  if (mode === 'sentences') {
+    const sentenceOffset = lessonId !== undefined ? Math.max(0, (lessonId - 36) * 5) : 0
+    const slice = SENTENCES.slice(sentenceOffset, sentenceOffset + 6)
+    const allMeanings = SENTENCES.map((s) => s.meaning)
+    for (const sentence of slice) {
+      const distractors = allMeanings.filter((m) => m !== sentence.meaning).slice(0, 3)
+      if (distractors.length >= 2) {
+        exercises.push({
+          id: `sentence_read_${sentence.id}`,
+          type: 'sentence_read',
+          letterId: letterIds[0] ?? 'alef',
+          promptText: 'What does this sentence mean?',
+          correctAnswer: sentence.meaning,
+          distractors,
+          sentence,
+        })
+      }
+    }
+    return exercises
+  }
+
+  // ── Phase 0: harakah_pick — for kasra/damma/sukun lessons (letters only) ──
+  if (mode === 'letters' && (harakah === 'kasra' || harakah === 'damma' || harakah === 'sukun')) {
     const allHarakah = ['fatha', 'kasra', 'damma', 'sukun']
     const hpLetters = letterIds.slice(0, 3)
     for (const id of hpLetters) {
@@ -66,54 +91,60 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 1: teach + speak pairs (one per letter, in order) ──────────────
-  for (let i = 0; i < letterIds.length; i++) {
-    const id = letterIds[i]
-    const letter = getLetterById(id)
-    if (!letter) continue
+  // ── Phase 1: teach + speak pairs (letters mode only) ─────────────────────
+  if (mode === 'letters') {
+    for (let i = 0; i < letterIds.length; i++) {
+      const id = letterIds[i]
+      const letter = getLetterById(id)
+      if (!letter) continue
 
-    exercises.push({
-      id: `teach_${id}`,
-      type: 'teach',
-      letterId: id,
-      correctAnswer: id,
-      distractors: [],
-    })
+      exercises.push({
+        id: `teach_${id}`,
+        type: 'teach',
+        letterId: id,
+        correctAnswer: id,
+        distractors: [],
+      })
 
-    exercises.push({
-      id: `speak_${id}_${i}`,
-      type: 'speak',
-      letterId: id,
-      correctAnswer: id,
-      distractors: [],
-      promptText: 'Say the letter!',
-    })
+      exercises.push({
+        id: `speak_${id}_${i}`,
+        type: 'speak',
+        letterId: id,
+        correctAnswer: id,
+        distractors: [],
+        promptText: 'Say the letter!',
+      })
+    }
   }
 
-  // ── Phase 2: listen_pick — one per letter ─────────────────────────────────
-  for (const id of letterIds) {
-    exercises.push({
-      id: `listen_${id}`,
-      type: 'listen_pick',
-      letterId: id,
-      correctAnswer: id,
-      distractors: getDistractors(id, letterIds),
-      promptText: 'Which letter do you hear?',
-    })
+  // ── Phase 2: listen_pick (letters mode only) ──────────────────────────────
+  if (mode === 'letters') {
+    for (const id of letterIds) {
+      exercises.push({
+        id: `listen_${id}`,
+        type: 'listen_pick',
+        letterId: id,
+        correctAnswer: id,
+        distractors: getDistractors(id, letterIds),
+        promptText: 'Which letter do you hear?',
+      })
+    }
   }
 
-  // ── Phase 3: match — one per letter ──────────────────────────────────────
-  for (const id of letterIds) {
-    const letter = getLetterById(id)
-    if (!letter || letter.examples.length === 0) continue
-    exercises.push({
-      id: `match_${id}`,
-      type: 'match',
-      letterId: id,
-      correctAnswer: id,
-      distractors: getDistractors(id, letterIds),
-      wordExample: getExampleByHarakah(letter, harakah),
-    })
+  // ── Phase 3: match (letters mode only) ───────────────────────────────────
+  if (mode === 'letters') {
+    for (const id of letterIds) {
+      const letter = getLetterById(id)
+      if (!letter || letter.examples.length === 0) continue
+      exercises.push({
+        id: `match_${id}`,
+        type: 'match',
+        letterId: id,
+        correctAnswer: id,
+        distractors: getDistractors(id, letterIds),
+        wordExample: getExampleByHarakah(letter, harakah),
+      })
+    }
   }
 
   // ── Phase 3.5: pick_letter — fill-in-blank, 2 per lesson (lesson 2+) ─────
@@ -143,14 +174,16 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 4: one dragdrop for the whole lesson ───────────────────────────
-  exercises.push({
-    id: `dragdrop_${suffix}`,
-    type: 'dragdrop',
-    letterId: letterIds[0],
-    correctAnswer: letterIds.join(','),
-    distractors: [],
-  })
+  // ── Phase 4: dragdrop (letters mode only) ────────────────────────────────
+  if (mode === 'letters') {
+    exercises.push({
+      id: `dragdrop_${suffix}`,
+      type: 'dragdrop',
+      letterId: letterIds[0],
+      correctAnswer: letterIds.join(','),
+      distractors: [],
+    })
+  }
 
   // ── Phase 5: word_listen — up to 4 exercises (one per letter) ────────────
   const wlCount = Math.min(4, letterIds.length)
@@ -219,8 +252,8 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 8: sentence_read — from lesson 9; up to 2 early, up to 4 review ─
-  if (lessonId !== undefined && lessonId >= 9) {
+  // ── Phase 8: sentence_read (letters mode, lesson 9+; not words mode) ──────
+  if (mode === 'letters' && lessonId !== undefined && lessonId >= 9) {
     const maxSentences = lessonId >= 17 ? 4 : 2
     const sentences = getSentencesForLesson(lessonId).slice(0, maxSentences)
     const allMeanings = getSentencesForLesson(lessonId).map((s) => s.meaning)
