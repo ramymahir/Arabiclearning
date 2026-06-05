@@ -75,16 +75,16 @@ export function PickLetterMode({ exercise, onCorrect, onWrong, onContinue }: Pro
       >
         <div className="text-6xl mb-3">{word.emoji}</div>
         <div className="text-4xl font-arabic text-white leading-none mb-2 flex items-center justify-center gap-1" dir="rtl">
-          {/* Rest of the word */}
-          <span>{blankAndRest}</span>
-          {/* Highlighted blank placeholder */}
+          {/* Highlighted blank placeholder — first in DOM = rightmost in RTL (first Arabic letter) */}
           <motion.span
             animate={{ opacity: [1, 0.4, 1] }}
             transition={{ repeat: Infinity, duration: 1.2 }}
-            className="inline-block w-12 h-12 rounded-xl bg-white/30 border-2 border-white/60 text-white/70 text-2xl flex items-center justify-center"
+            className="inline-flex w-12 h-12 rounded-xl bg-white/30 border-2 border-white/60 text-white/70 text-2xl items-center justify-center"
           >
             ?
           </motion.span>
+          {/* Rest of the word */}
+          <span>{blankAndRest}</span>
         </div>
         <div className="text-white/70 text-sm mt-1">🔊 Tap to hear</div>
       </motion.button>
