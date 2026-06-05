@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { ArabicLetter, Harakah } from '@/types'
 import { useAudio } from '@/hooks/useAudio'
-import { applyHarakah, HARAKAH_DESCRIPTIONS } from '@/utils/arabic'
+import { applyHarakah, HARAKAH_DESCRIPTIONS, getExampleByHarakah } from '@/utils/arabic'
 
 interface Props {
   letter: ArabicLetter
@@ -24,10 +24,13 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
   const displayArabic = applyHarakah(letter.arabic, harakah)
 
   const letterSound = applyHarakah(letter.arabic, harakah)
+  const primaryExample = getExampleByHarakah(letter, harakah)
+  const orderedExamples = [primaryExample, ...letter.examples.filter((ex) => ex !== primaryExample)]
 
   useEffect(() => {
-    const t = setTimeout(() => playLetter(letter, letterSound), 400)
-    return () => clearTimeout(t)
+    const t1 = setTimeout(() => playLetter(letter, letterSound), 400)
+    const t2 = setTimeout(() => { playWord(primaryExample); setWordIndex(0) }, 1200)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [letter.id])
 
   return (
@@ -108,10 +111,10 @@ export function TeachMode({ letter, harakah, onContinue }: Props) {
         transition={{ delay: 0.5 }}
       >
         <div className="text-center text-sm font-bold text-gray-600 uppercase tracking-wide mb-3">
-          Example Words
+          Example Words — tap each to hear them!
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-          {letter.examples.map((ex, i) => (
+          {orderedExamples.map((ex, i) => (
             <motion.button
               key={i}
               initial={{ opacity: 0, scale: 0.8 }}

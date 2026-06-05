@@ -24,6 +24,7 @@ export interface WordExample {
   meaning: string
   emoji: string
   audioFile?: string
+  harakah?: 'fatha' | 'kasra' | 'damma'
 }
 
 export interface ArabicLetter {

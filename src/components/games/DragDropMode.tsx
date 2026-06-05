@@ -4,7 +4,7 @@ import type { LessonExercise, Harakah } from '@/types'
 import { getLettersByIds } from '@/data/letters'
 import { Button } from '@/components/ui/Button'
 import { useAudio } from '@/hooks/useAudio'
-import { applyHarakah } from '@/utils/arabic'
+import { applyHarakah, getExampleByHarakah } from '@/utils/arabic'
 import { shuffle } from '@/utils/shuffle'
 
 interface Props {
@@ -37,6 +37,8 @@ export function DragDropMode({ exercise, harakah, onCorrect, onWrong, onContinue
   const dropZones = useRef<DropZone[]>(
     letters.map((l) => ({ letterId: l.id, matched: null, el: null }))
   )
+
+  const exampleMap = Object.fromEntries(letters.map((l) => [l.id, getExampleByHarakah(l, harakah)]))
 
   const [matched, setMatched] = useState<Record<string, string>>({})
   const [shaking, setShaking] = useState<string | null>(null)
@@ -146,11 +148,11 @@ export function DragDropMode({ exercise, harakah, onCorrect, onWrong, onContinue
                     }
                   `}
                 >
-                  <span className="text-4xl mb-1">{letter.examples[0].emoji}</span>
+                  <span className="text-4xl mb-1">{exampleMap[letter.id].emoji}</span>
                   <span className="text-lg font-arabic text-gray-700" dir="rtl">
-                    {letter.examples[0].arabic}
+                    {exampleMap[letter.id].arabic}
                   </span>
-                  <span className="text-xs font-semibold text-gray-600">{letter.examples[0].meaning}</span>
+                  <span className="text-xs font-semibold text-gray-600">{exampleMap[letter.id].meaning}</span>
                 </div>
               )
             })}

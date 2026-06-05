@@ -1,4 +1,4 @@
-import type { Harakah } from '@/types'
+import type { Harakah, ArabicLetter, WordExample } from '@/types'
 
 const HARAKAH_CHARS: Record<Harakah, string> = {
   fatha: 'َ',      // َ
@@ -18,6 +18,16 @@ export const getHarakahChar = (h: Harakah): string => HARAKAH_CHARS[h] ?? ''
 
 export const applyHarakah = (letter: string, h: Harakah): string =>
   letter + getHarakahChar(h)
+
+export function getExampleByHarakah(letter: ArabicLetter, harakah: Harakah): WordExample {
+  const target: Harakah =
+    harakah === 'fatha' || harakah === 'kasra' || harakah === 'damma' ? harakah : 'fatha'
+  return (
+    letter.examples.find((ex) => ex.harakah === target) ??
+    letter.examples.find((ex) => ex.harakah === 'fatha') ??
+    letter.examples[0]
+  )
+}
 
 export const HARAKAH_DESCRIPTIONS: Record<Harakah, { ar: string; en: string; sound: string }> = {
   fatha: { ar: 'فَتْحَة', en: 'Fatha', sound: 'a' },

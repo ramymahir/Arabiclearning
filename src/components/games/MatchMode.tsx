@@ -5,7 +5,7 @@ import { getLetterById, getLettersByIds } from '@/data/letters'
 import { AnswerFeedback } from './AnswerFeedback'
 import { useAudio } from '@/hooks/useAudio'
 import { shuffle } from '@/utils/shuffle'
-import { applyHarakah } from '@/utils/arabic'
+import { applyHarakah, getExampleByHarakah } from '@/utils/arabic'
 
 interface Props {
   exercise: LessonExercise
@@ -37,7 +37,7 @@ export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }:
     shuffle(
       optionLetters.map((l) => ({
         letterId: l.id,
-        word: l.examples[0],
+        word: getExampleByHarakah(l, harakah),
       }))
     )
   )
@@ -135,7 +135,7 @@ export function MatchMode({ exercise, harakah, onCorrect, onWrong, onContinue }:
 
       <AnswerFeedback
         result={result}
-        correctText={correctLetter.examples[0]?.arabic}
+        correctText={getExampleByHarakah(correctLetter, harakah).arabic}
         onContinue={onContinue}
       />
     </div>

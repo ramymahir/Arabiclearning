@@ -1,6 +1,7 @@
 import type { LessonExercise, Harakah } from '@/types'
 import { ARABIC_LETTERS, getLetterById } from './letters'
 import { getSentencesForLesson } from './sentences'
+import { getExampleByHarakah } from '@/utils/arabic'
 
 export interface LetterMastery { accuracy: number; attempts: number }
 
@@ -110,7 +111,7 @@ export function generateLessonExercises(
       letterId: id,
       correctAnswer: id,
       distractors: getDistractors(id, letterIds),
-      wordExample: letter.examples[0],
+      wordExample: getExampleByHarakah(letter, harakah),
     })
   }
 
@@ -127,10 +128,10 @@ export function generateLessonExercises(
   // ── Phase 5: word_listen — hear a word, pick correct Arabic spelling ──────
   const wlLetter = getLetterById(letterIds[0])
   if (wlLetter && wlLetter.examples.length > 0) {
-    const correctWord = wlLetter.examples[0]
+    const correctWord = getExampleByHarakah(wlLetter, harakah)
     const distractorWords = letterIds
       .slice(1, 4)
-      .map((id) => getLetterById(id)?.examples[0]?.arabic)
+      .map((id) => { const l = getLetterById(id); return l ? getExampleByHarakah(l, harakah).arabic : undefined })
       .filter((w): w is string => !!w)
     if (distractorWords.length >= 2) {
       exercises.push({
@@ -149,11 +150,11 @@ export function generateLessonExercises(
   const wmIdx = Math.min(1, letterIds.length - 1)
   const wmLetter = getLetterById(letterIds[wmIdx])
   if (wmLetter && wmLetter.examples.length > 0) {
-    const correctWord = wmLetter.examples[0]
+    const correctWord = getExampleByHarakah(wmLetter, harakah)
     const distractorMeanings = letterIds
       .filter((_, i) => i !== wmIdx)
       .slice(0, 3)
-      .map((id) => getLetterById(id)?.examples[0]?.meaning)
+      .map((id) => { const l = getLetterById(id); return l ? getExampleByHarakah(l, harakah).meaning : undefined })
       .filter((m): m is string => !!m)
     if (distractorMeanings.length >= 2) {
       exercises.push({
