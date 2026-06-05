@@ -146,10 +146,13 @@ const server = http.createServer(async (req, res) => {
           body: JSON.stringify({
             text,
             model_id: 'eleven_multilingual_v2',
-            voice_settings: { stability, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true },
+            voice_settings: { stability, similarity_boost: 0.80, style: 0.0 },
           }),
         })
-        if (!elRes.ok) throw new Error(`ElevenLabs ${elRes.status}`)
+        if (!elRes.ok) {
+          const errBody = await elRes.text()
+          throw new Error(`ElevenLabs ${elRes.status}: ${errBody}`)
+        }
         buffer = Buffer.from(await elRes.arrayBuffer())
       } catch (err) {
         console.warn('[tts] ElevenLabs failed, trying OpenAI:', err.message)

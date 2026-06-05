@@ -19,7 +19,7 @@ async function elevenlabsTTS(text: string, role: string, apiKey: string): Promis
     body: JSON.stringify({
       text,
       model_id: 'eleven_multilingual_v2',
-      voice_settings: { stability, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true },
+      voice_settings: { stability, similarity_boost: 0.80, style: 0.0 },
     }),
   })
   if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${await res.text()}`)
