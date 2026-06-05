@@ -117,10 +117,9 @@ const server = http.createServer(async (req, res) => {
 
   // ── POST /api/tts ─────────────────────────────────────────────────────
   if (req.url === '/api/tts') {
-    const elKey  = process.env.ELEVENLABS_API_KEY
-    const oaiKey = process.env.OPENAI_API_KEY
-    if (!elKey && !oaiKey) {
-      return jsonReply(res, 503, { error: 'TTS not configured — add ELEVENLABS_API_KEY or OPENAI_API_KEY to .env' })
+    const elKey = process.env.ELEVENLABS_API_KEY
+    if (!elKey) {
+      return jsonReply(res, 503, { error: 'TTS not configured — add ELEVENLABS_API_KEY to .env' })
     }
 
     const body = await parseBody(req)
@@ -132,49 +131,26 @@ const server = http.createServer(async (req, res) => {
 
     const EL_VOICE_LETTER  = process.env.ELEVENLABS_VOICE_LETTER  ?? '21m00Tcm4TlvDq8ikWAM'
     const EL_VOICE_TEACHER = process.env.ELEVENLABS_VOICE_TEACHER ?? 'EXAVITQu4vr4xnSDxMaL'
+    const voiceId = role === 'teacher' ? EL_VOICE_TEACHER : EL_VOICE_LETTER
+    const stability = role === 'letter' ? 0.85 : 0.70
 
-    let buffer = null
+    const elRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: { 'xi-api-key': elKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability, similarity_boost: 0.80, style: 0.0 },
+      }),
+    })
 
-    // Try ElevenLabs first
-    if (elKey) {
-      try {
-        const voiceId = role === 'teacher' ? EL_VOICE_TEACHER : EL_VOICE_LETTER
-        const stability = role === 'letter' ? 0.85 : 0.70
-        const elRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-          method: 'POST',
-          headers: { 'xi-api-key': elKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-          body: JSON.stringify({
-            text,
-            model_id: 'eleven_multilingual_v2',
-            voice_settings: { stability, similarity_boost: 0.80, style: 0.0 },
-          }),
-        })
-        if (!elRes.ok) {
-          const errBody = await elRes.text()
-          throw new Error(`ElevenLabs ${elRes.status}: ${errBody}`)
-        }
-        buffer = Buffer.from(await elRes.arrayBuffer())
-      } catch (err) {
-        console.warn('[tts] ElevenLabs failed, trying OpenAI:', err.message)
-      }
+    if (!elRes.ok) {
+      const detail = await elRes.text()
+      console.error('[tts] ElevenLabs error:', elRes.status, detail)
+      return jsonReply(res, 502, { error: `ElevenLabs ${elRes.status}`, detail })
     }
 
-    // Fallback to OpenAI
-    if (!buffer && oaiKey) {
-      try {
-        const { default: OpenAI } = await import('openai')
-        const openai = new OpenAI({ apiKey: oaiKey })
-        const voice = role === 'teacher' ? 'nova' : role === 'letter' ? 'shimmer' : 'alloy'
-        const speed = role === 'letter' ? 0.70 : 0.85
-        const mp3 = await openai.audio.speech.create({ model: 'tts-1-hd', voice, input: text, speed })
-        buffer = Buffer.from(await mp3.arrayBuffer())
-      } catch (err) {
-        console.error('[tts] OpenAI fallback failed:', err.message)
-      }
-    }
-
-    if (!buffer) return jsonReply(res, 500, { error: 'TTS generation failed' })
-
+    const buffer = Buffer.from(await elRes.arrayBuffer())
     res.writeHead(200, {
       'Content-Type': 'audio/mpeg',
       'Content-Length': buffer.length,
@@ -244,10 +220,8 @@ const server = http.createServer(async (req, res) => {
 const PORT = 3001
 server.listen(PORT, () => {
   const hasElevenLabs = !!process.env.ELEVENLABS_API_KEY
-  const hasOpenAI = !!process.env.OPENAI_API_KEY
   const hasAnthropic = !!process.env.ANTHROPIC_API_KEY
   console.log(`\nDev API server → http://localhost:${PORT}`)
-  console.log(`  TTS primary (ElevenLabs): ${hasElevenLabs ? '✓ key loaded' : '✗ no key'}`)
-  console.log(`  TTS fallback (OpenAI):    ${hasOpenAI ? '✓ key loaded' : '✗ no key — browser TTS active'}`)
-  console.log(`  Teacher (Noor):           ${hasAnthropic ? '✓ key loaded' : '✗ no key — built-in messages active'}\n`)
+  console.log(`  TTS (ElevenLabs): ${hasElevenLabs ? '✓ key loaded' : '✗ no key — browser TTS fallback active'}`)
+  console.log(`  Teacher (Noor):   ${hasAnthropic ? '✓ key loaded' : '✗ no key — built-in messages active'}\n`)
 })
