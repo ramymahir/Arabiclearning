@@ -7,14 +7,14 @@ import { useOnboardingStore } from '@/store/onboardingStore'
 import { ARABIC_LETTERS } from '@/data/letters'
 import { audioManager } from '@/audio/audioManager'
 
-// The 5 test letter IDs spread across the alphabet
 const TEST_LETTER_IDS = ['alef', 'seen', 'ain', 'meem', 'ya']
 
+// Vivid saturated colors — no light shades
 const OPTION_COLORS = [
-  'bg-amber-600 hover:bg-amber-700 shadow-amber-500',
-  'bg-rose-500 hover:bg-rose-600 shadow-rose-400',
-  'bg-sky-500 hover:bg-sky-600 shadow-sky-400',
-  'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-400',
+  { base: 'bg-rose-500 shadow-rose-600/50',     correct: 'bg-emerald-500 shadow-emerald-600/50', wrong: 'bg-gray-600 shadow-gray-700/50' },
+  { base: 'bg-amber-500 shadow-amber-600/50',   correct: 'bg-emerald-500 shadow-emerald-600/50', wrong: 'bg-gray-600 shadow-gray-700/50' },
+  { base: 'bg-violet-600 shadow-violet-700/50', correct: 'bg-emerald-500 shadow-emerald-600/50', wrong: 'bg-gray-600 shadow-gray-700/50' },
+  { base: 'bg-sky-500 shadow-sky-600/50',       correct: 'bg-emerald-500 shadow-emerald-600/50', wrong: 'bg-gray-600 shadow-gray-700/50' },
 ]
 
 function shuffle<T>(arr: T[]): T[] {
@@ -28,7 +28,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 interface Question {
   correctId: string
-  options: string[] // letter IDs
+  options: string[]
 }
 
 function buildQuestions(): Question[] {
@@ -40,12 +40,46 @@ function buildQuestions(): Question[] {
   })
 }
 
+// Floating decoration bubbles for the background
+function FloatingDeco() {
+  const items = [
+    { emoji: '⭐', top: '8%',  left: '6%',  size: 'text-4xl', delay: 0,   dur: 3.8 },
+    { emoji: '🌙', top: '14%', right: '8%', size: 'text-3xl', delay: 0.6, dur: 4.2 },
+    { emoji: '✨', top: '40%', left: '4%',  size: 'text-3xl', delay: 1.2, dur: 3.5 },
+    { emoji: '🌟', top: '60%', right: '5%', size: 'text-4xl', delay: 1.8, dur: 4.8 },
+    { emoji: '💫', top: '80%', left: '10%', size: 'text-3xl', delay: 0.4, dur: 3.2 },
+    { emoji: '🎈', top: '25%', right: '12%',size: 'text-3xl', delay: 2.0, dur: 5.0 },
+  ]
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* Soft glow blobs */}
+      <div className="absolute top-0 left-0 w-72 h-72 rounded-full bg-pink-500/15 -translate-x-1/3 -translate-y-1/3" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-amber-400/10 translate-x-1/4 translate-y-1/4" />
+      <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-violet-400/10 -translate-x-1/2 -translate-y-1/2" />
+      {/* Floating emojis */}
+      {items.map((item, i) => (
+        <motion.div
+          key={i}
+          className={`absolute ${item.size} opacity-30 select-none`}
+          style={{ top: item.top, left: 'left' in item ? item.left : undefined, right: 'right' in item ? item.right : undefined }}
+          animate={{ y: [0, -18, 0] }}
+          transition={{ repeat: Infinity, duration: item.dur, delay: item.delay, ease: 'easeInOut' }}
+        >
+          {item.emoji}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
 // Step 0 — Welcome
 function WelcomeStep({ name, onStart }: { name: string; onStart: () => void }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-500 to-indigo-600 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-violet-900 via-purple-800 to-indigo-900 flex flex-col items-center justify-center px-4">
+      <FloatingDeco />
       <motion.div
-        className="w-full max-w-sm mx-auto text-center"
+        className="w-full max-w-sm mx-auto text-center relative z-10"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -60,12 +94,12 @@ function WelcomeStep({ name, onStart }: { name: string; onStart: () => void }) {
         <h1 className="text-4xl font-black text-white mb-3">
           Hi {name}! I'm Noor! 👋
         </h1>
-        <p className="text-xl text-purple-100 font-semibold mb-10">
+        <p className="text-xl text-purple-200 font-semibold mb-10">
           I'll teach you to read Arabic!
         </p>
         <motion.button
           onClick={onStart}
-          className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-white font-black text-2xl p-5 rounded-3xl shadow-lg shadow-amber-300/50 active:scale-95"
+          className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-2xl p-5 rounded-3xl shadow-xl shadow-amber-500/40"
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
         >
@@ -77,13 +111,7 @@ function WelcomeStep({ name, onStart }: { name: string; onStart: () => void }) {
 }
 
 // Step 1 — Placement Test
-function PlacementStep({
-  questions,
-  onDone,
-}: {
-  questions: Question[]
-  onDone: (score: number) => void
-}) {
+function PlacementStep({ questions, onDone }: { questions: Question[]; onDone: (score: number) => void }) {
   const [current, setCurrent] = useState(0)
   const [score, setScore] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
@@ -92,7 +120,6 @@ function PlacementStep({
   const question = questions[current]
   const correctLetter = ARABIC_LETTERS.find((l) => l.id === question.correctId)!
 
-  // Play audio when question changes
   useEffect(() => {
     audioManager.init()
     setTimeout(() => {
@@ -121,83 +148,83 @@ function PlacementStep({
     [selected, question.correctId, current, questions.length, onDone, score]
   )
 
-  const progress = ((current) / questions.length) * 100
+  const progress = (current / questions.length) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-400 to-blue-600 flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-violet-900 via-purple-800 to-indigo-900 flex flex-col items-center justify-center px-4 py-8">
+      <FloatingDeco />
+
       <motion.div
-        className="w-full max-w-sm mx-auto"
+        className="w-full max-w-sm mx-auto relative z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
         {/* Header */}
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-black text-white mb-1">
-            Let's see what you know! ⭐
-          </h2>
-          <p className="text-sky-100 font-semibold">Tap the letter you hear</p>
+        <div className="text-center mb-5">
+          <h2 className="text-2xl font-black text-white mb-1">Let's see what you know! ⭐</h2>
+          <p className="text-purple-200 font-semibold">Tap the letter you hear</p>
         </div>
 
-        {/* Progress */}
+        {/* Progress bar */}
         <div className="mb-6">
           <div className="flex justify-between text-white font-bold text-sm mb-2">
             <span>Question {current + 1} of {questions.length}</span>
-            <span>{score} correct</span>
+            <span>{score} ✅</span>
           </div>
-          <div className="w-full bg-sky-700/50 rounded-full h-3">
+          <div className="w-full bg-white/10 rounded-full h-3">
             <motion.div
-              className="bg-white rounded-full h-3"
+              className="bg-gradient-to-r from-amber-400 to-orange-400 rounded-full h-3"
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.4 }}
             />
           </div>
         </div>
 
-        {/* Question card */}
+        {/* Replay button */}
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
-            className="bg-white rounded-3xl p-6 shadow-xl mb-4"
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 60 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
+            exit={{ opacity: 0, x: -60 }}
             transition={{ duration: 0.25 }}
           >
-            {/* Replay button */}
-            <div className="flex justify-center mb-4">
-              <button
-                onClick={() =>
-                  audioManager.playLetter(
-                    correctLetter.audioFile,
-                    correctLetter.ttsFallback
-                  )
-                }
-                className="bg-sky-100 hover:bg-sky-200 text-sky-700 rounded-2xl px-6 py-3 text-2xl font-bold active:scale-95 transition-transform"
+            <div className="flex justify-center mb-6">
+              <motion.button
+                onClick={() => audioManager.playLetter(correctLetter.audioFile, correctLetter.ttsFallback)}
+                className="bg-amber-400 text-amber-900 font-black text-xl px-8 py-4 rounded-2xl shadow-xl shadow-amber-500/40"
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
               >
-                🔊 Replay
-              </button>
+                🔊 Tap to hear
+              </motion.button>
             </div>
 
-            {/* Options 2×2 grid */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Options 2×2 grid — vivid tiles, no white card */}
+            <div className="grid grid-cols-2 gap-4">
               {question.options.map((optId, i) => {
                 const letter = ARABIC_LETTERS.find((l) => l.id === optId)!
                 const isSelected = selected === optId
                 const isRight = optId === question.correctId
+                const theme = OPTION_COLORS[i % OPTION_COLORS.length]
 
-                let extraClasses = ''
-                if (isSelected && isCorrect) extraClasses = 'bg-green-400 shadow-green-300 scale-105'
-                else if (isSelected && !isCorrect) extraClasses = 'bg-red-400 shadow-red-300 scale-95'
-                else if (selected !== null && isRight) extraClasses = 'bg-green-400 shadow-green-300'
+                let colorClass = theme.base
+                if (isSelected && isCorrect) colorClass = theme.correct
+                else if (isSelected && !isCorrect) colorClass = theme.wrong
+                else if (selected !== null && isRight) colorClass = theme.correct
+                else if (selected !== null && !isSelected) colorClass = `${theme.base} opacity-50`
 
                 return (
                   <motion.button
                     key={optId}
                     onClick={() => handleSelect(optId)}
                     disabled={selected !== null}
-                    className={`${isSelected || (selected && isRight) ? extraClasses : OPTION_COLORS[i]} text-white font-black text-5xl p-6 rounded-2xl shadow-md transition-all active:scale-95 disabled:cursor-not-allowed`}
-                    whileHover={selected === null ? { scale: 1.04 } : {}}
-                    whileTap={selected === null ? { scale: 0.96 } : {}}
+                    className={`${colorClass} text-white font-black text-6xl py-8 rounded-3xl shadow-xl transition-colors disabled:cursor-not-allowed`}
+                    animate={{
+                      scale: isSelected && isCorrect ? [1, 1.12, 1] : isSelected && !isCorrect ? [1, 0.92, 1] : 1,
+                    }}
+                    whileHover={selected === null ? { scale: 1.05 } : {}}
+                    whileTap={selected === null ? { scale: 0.95 } : {}}
                     dir="rtl"
                     lang="ar"
                   >
@@ -214,41 +241,22 @@ function PlacementStep({
 }
 
 // Step 2 — Result
-function ResultStep({
-  score,
-  profileId,
-  onFinish,
-}: {
-  score: number
-  profileId: string
-  onFinish: () => void
-}) {
+function ResultStep({ score, onFinish }: { score: number; profileId: string; onFinish: () => void }) {
   const level = score <= 1 ? 0 : score <= 3 ? 1 : 2
 
   const levelData = [
-    {
-      emoji: '🌱',
-      title: 'Beginner ⭐',
-      message: "Welcome! We'll start from the very beginning 🌱",
-    },
-    {
-      emoji: '🚀',
-      title: 'Explorer 🚀',
-      message: 'Great! You already know some letters!',
-    },
-    {
-      emoji: '✨',
-      title: 'Star Learner ✨',
-      message: 'Amazing! You know a lot already!',
-    },
+    { emoji: '🌱', title: 'Beginner ⭐',    message: "Welcome! We'll start from the very beginning 🌱" },
+    { emoji: '🚀', title: 'Explorer 🚀',    message: 'Great! You already know some letters!' },
+    { emoji: '✨', title: 'Star Learner ✨', message: 'Amazing! You know a lot already!' },
   ]
 
   const result = levelData[level]
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-400 to-orange-500 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-violet-900 via-purple-800 to-indigo-900 flex flex-col items-center justify-center px-4">
+      <FloatingDeco />
       <motion.div
-        className="w-full max-w-sm mx-auto text-center"
+        className="w-full max-w-sm mx-auto text-center relative z-10"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
@@ -261,11 +269,11 @@ function ResultStep({
           {result.emoji}
         </motion.div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-xl mb-6">
-          <h2 className="text-3xl font-black text-gray-800 mb-2">{result.title}</h2>
-          <p className="text-lg text-gray-600 mb-4">{result.message}</p>
-          <div className="bg-amber-50 rounded-2xl p-4">
-            <p className="text-2xl font-black text-amber-600">
+        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-xl mb-6">
+          <h2 className="text-3xl font-black text-white mb-2">{result.title}</h2>
+          <p className="text-lg text-purple-200 mb-4">{result.message}</p>
+          <div className="bg-amber-400/20 border border-amber-400/40 rounded-2xl p-4">
+            <p className="text-2xl font-black text-amber-300">
               You got {score} out of 5 right!
             </p>
           </div>
@@ -273,7 +281,7 @@ function ResultStep({
 
         <motion.button
           onClick={onFinish}
-          className="w-full bg-white text-orange-500 font-black text-2xl p-5 rounded-3xl shadow-lg shadow-orange-300/50 active:scale-95"
+          className="w-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-2xl p-5 rounded-3xl shadow-xl shadow-amber-500/40"
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
         >
