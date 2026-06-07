@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "braincloud": "^5.9.0",
     "framer-motion": "^11.0.0",
     "howler": "^2.2.4",
     "openai": "^4.56.0",
