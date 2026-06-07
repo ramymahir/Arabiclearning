@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { ArabicText } from '@/components/ui/ArabicText'
 import { MAX_PROFILES } from '@/data/constants'
 import { audioManager } from '@/audio/audioManager'
+import { pullFromCloud } from '@/lib/syncManager'
 
 export function ProfilePage() {
   const navigate = useNavigate()
@@ -18,6 +19,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     audioManager.init()
+    pullFromCloud()
   }, [])
 
   const testAudio = () => {

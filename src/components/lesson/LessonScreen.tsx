@@ -9,6 +9,7 @@ import { useAdaptiveStore } from '@/store/adaptiveStore'
 import { useOnboardingStore } from '@/store/onboardingStore'
 import { getLetterById } from '@/data/letters'
 import { adaptExercises, type LetterMastery } from '@/data/exercises'
+import { pushToCloud } from '@/lib/syncManager'
 import { applyHarakah } from '@/utils/arabic'
 import { audioManager } from '@/audio/audioManager'
 import { getTeacherFeedback, type TeacherFeedback } from '@/ai/teacherAgent'
@@ -150,6 +151,7 @@ export function LessonScreen({ lesson }: Props) {
       setResult(completed)
       setPhase('result')
       endSession()
+      pushToCloud()
     } else {
       nextExercise()
       setExerciseIndex(nextIndex)
