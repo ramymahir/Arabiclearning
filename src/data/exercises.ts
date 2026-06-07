@@ -117,18 +117,19 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 2: listen_pick (letters mode only) ──────────────────────────────
+  // ── Phase 2: listen_pick / balloon_pop alternating (letters mode only) ───
   if (mode === 'letters') {
-    for (const id of letterIds) {
+    letterIds.forEach((id, i) => {
+      const type = i % 2 === 0 ? 'listen_pick' : 'balloon_pop'
       exercises.push({
-        id: `listen_${id}`,
-        type: 'listen_pick',
+        id: `${type}_${id}`,
+        type,
         letterId: id,
         correctAnswer: id,
         distractors: getDistractors(id, letterIds),
         promptText: 'Which letter do you hear?',
       })
-    }
+    })
   }
 
   // ── Phase 3: match (letters mode only) ───────────────────────────────────
@@ -174,15 +175,25 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 4: dragdrop (letters mode only) ────────────────────────────────
+  // ── Phase 4: memory_flip (4+ letters) or dragdrop fallback (letters only) ─
   if (mode === 'letters') {
-    exercises.push({
-      id: `dragdrop_${suffix}`,
-      type: 'dragdrop',
-      letterId: letterIds[0],
-      correctAnswer: letterIds.join(','),
-      distractors: [],
-    })
+    if (letterIds.length >= 4) {
+      exercises.push({
+        id: `memory_flip_${suffix}`,
+        type: 'memory_flip',
+        letterId: letterIds[0],
+        correctAnswer: letterIds.slice(0, 4).join(','),
+        distractors: [],
+      })
+    } else {
+      exercises.push({
+        id: `dragdrop_${suffix}`,
+        type: 'dragdrop',
+        letterId: letterIds[0],
+        correctAnswer: letterIds.join(','),
+        distractors: [],
+      })
+    }
   }
 
   // ── Phase 5: word_listen — up to 4 exercises (one per letter) ────────────
@@ -210,7 +221,7 @@ export function generateLessonExercises(
     }
   }
 
-  // ── Phase 6: word_match — up to 4 exercises ───────────────────────────────
+  // ── Phase 6: word_match / word_rain alternating — up to 4 exercises ────────
   const wmCount = Math.min(4, letterIds.length)
   for (let i = 0; i < wmCount; i++) {
     const wmLetter = getLetterById(letterIds[i])
@@ -223,9 +234,10 @@ export function generateLessonExercises(
       .filter((m): m is string => !!m && m !== correctWord.meaning)
       .slice(0, 3)
     if (distractorMeanings.length >= 2) {
+      const wmType = i % 2 === 0 ? 'word_match' : 'word_rain'
       exercises.push({
-        id: `word_match_${suffix}_${i}`,
-        type: 'word_match',
+        id: `${wmType}_${suffix}_${i}`,
+        type: wmType,
         letterId: letterIds[i],
         promptText: 'What does this word mean?',
         correctAnswer: correctWord.meaning,
@@ -302,10 +314,10 @@ export function adaptExercises(
 
   if (weakIds.length === 0 && knownIds.length === 0) return baseExercises
 
-  const dragdropExercises = baseExercises.filter((e) => e.type === 'dragdrop')
+  const dragdropExercises = baseExercises.filter((e) => e.type === 'dragdrop' || e.type === 'memory_flip')
   const teachExercises = baseExercises.filter((e) => e.type === 'teach')
   const speakExercises = baseExercises.filter((e) => e.type === 'speak')
-  const listenPickExercises = baseExercises.filter((e) => e.type === 'listen_pick')
+  const listenPickExercises = baseExercises.filter((e) => e.type === 'listen_pick' || e.type === 'balloon_pop')
   const matchExercises = baseExercises.filter((e) => e.type === 'match')
 
   const filteredTeach = teachExercises.filter((e) => !knownIds.includes(e.letterId))

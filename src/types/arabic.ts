@@ -51,6 +51,9 @@ export type ExerciseType =
   | 'harakah_pick'   // play a voweled letter sound, identify the harakah mark
   | 'pick_letter'    // see a word with missing first letter, pick it from 4 options
   | 'word_build'     // hear a word, tap letter tiles in order to spell it
+  | 'balloon_pop'   // hear a letter sound, tap the correct floating balloon
+  | 'memory_flip'   // flip cards to match letters ↔ their words
+  | 'word_rain'     // falling word card — tap the correct English meaning
 
 export interface ArabicSentence {
   id: string

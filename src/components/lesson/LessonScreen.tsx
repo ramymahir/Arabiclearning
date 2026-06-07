@@ -27,6 +27,9 @@ import { SentenceReadMode } from '@/components/games/SentenceReadMode'
 import { HarakahPickMode } from '@/components/games/HarakahPickMode'
 import { PickLetterMode } from '@/components/games/PickLetterMode'
 import { WordBuildMode } from '@/components/games/WordBuildMode'
+import { BalloonPopMode } from '@/components/games/BalloonPopMode'
+import { MemoryFlipMode } from '@/components/games/MemoryFlipMode'
+import { WordRainMode } from '@/components/games/WordRainMode'
 import { HeartBar } from '@/components/ui/HeartBar'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -329,6 +332,32 @@ export function LessonScreen({ lesson }: Props) {
               <WordBuildMode
                 exercise={currentExercise}
                 harakah={lesson.harakah}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'balloon_pop' && (
+              <BalloonPopMode
+                exercise={currentExercise}
+                harakah={lesson.harakah}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'memory_flip' && (
+              <MemoryFlipMode
+                exercise={currentExercise}
+                harakah={lesson.harakah}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onContinue={handleContinue}
+              />
+            )}
+            {currentExercise.type === 'word_rain' && (
+              <WordRainMode
+                exercise={currentExercise}
                 onCorrect={handleCorrect}
                 onWrong={handleWrong}
                 onContinue={handleContinue}
